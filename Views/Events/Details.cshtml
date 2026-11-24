@@ -1,0 +1,130 @@
+@model CollegeEvent
+@{
+    ViewData["Title"] = Model.Title;
+    var mine = ViewBag.MyRegistration as Registration;
+    bool isStudent = User.IsInRole("Student");
+    bool signedIn = User.Identity != null && User.Identity.IsAuthenticated;
+    bool canManage = User.IsInRole("Admin") || (User.IsInRole("Organizer") && User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value == Model.OrganizerId.ToString());
+    var similar = (List<CollegeEvent>)ViewBag.Similar;
+    int taken = Model.Registrations.Count;
+    int pct = Math.Min(100, (int)Math.Round(100.0 * taken / Model.Capacity));
+    List<string> Lines(string s) => (s ?? "").Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).Where(x => x.Length > 0).ToList();
+    var reqs = Lines(Model.Requirements);
+    var sched = Lines(Model.Schedule);
+    string url = Url.Action("Details", "Events", new { id = Model.Id }, Context.Request.Scheme);
+    var closes = Model.RegistrationDeadline;
+}
+
+<article class="detail cat-@EventCategories.Slug(Model.Category)">
+    <div class="detail-hero">
+        <partial name="_Cover" model="Model" />
+        <div class="wrap dh-inner">
+            <a class="back" asp-action="Index"><svg class="ic flip"><use href="#i-arrow-right"/></svg>All events</a>
+            <div class="dh-tags"><span class="chip"><i class="dot"></i>@Model.Category</span><span class="badge badge-@Model.StatusTone">@Model.Status</span></div>
+            <h1>@Model.Title</h1>
+            <p class="dh-sub">Hosted by @Model.Host</p>
+        </div>
+    </div>
+
+    <div class="wrap detail-grid">
+        <div class="detail-main">
+            @if (Model.IsCancelled)
+            {
+                <div class="alert alert-error"><strong>This event has been cancelled.</strong> Registered students were notified.</div>
+            }
+            <dl class="facts">
+                <div><dt><svg class="ic"><use href="#i-calendar"/></svg>Date</dt><dd>@Model.EventDate.ToString("dddd, dd MMMM yyyy")</dd></div>
+                <div><dt><svg class="ic"><use href="#i-clock"/></svg>Time</dt><dd>@Model.EventDate.ToString("hh:mm tt") to @Model.EndDate.ToString("hh:mm tt")</dd></div>
+                <div><dt><svg class="ic"><use href="#i-map-pin"/></svg>Venue</dt><dd>@Model.Location</dd></div>
+                <div><dt><svg class="ic"><use href="#i-users"/></svg>Participants</dt><dd>@taken registered, @Model.SeatsLeft seats left</dd></div>
+                <div><dt><svg class="ic"><use href="#i-flag"/></svg>Registration deadline</dt><dd>@closes.ToString("dd MMM yyyy, hh:mm tt")</dd></div>
+                <div><dt><svg class="ic"><use href="#i-building-2"/></svg>Organizer</dt><dd>@Model.Host<small>@Model.Organizer.FullName@(string.IsNullOrEmpty(Model.Organizer.Department) ? "" : ", " + Model.Organizer.Department)</small></dd></div>
+            </dl>
+
+            <section class="prose-block"><h2>About this event</h2><p class="pre">@Model.Description</p></section>
+
+            @if (reqs.Any())
+            {
+                <section class="prose-block"><h2>Requirements</h2>
+                    <ul class="check-list">@foreach (var r in reqs) { <li><svg class="ic"><use href="#i-circle-check"/></svg><span>@r</span></li> }</ul>
+                </section>
+            }
+
+            @if (sched.Any())
+            {
+                <section class="prose-block"><h2>Schedule</h2>
+                    <ol class="schedule">
+                        @foreach (var line in sched)
+                        {
+                            var m = System.Text.RegularExpressions.Regex.Match(line, @"^(\d{1,2}:\d{2})\s+(.*)$");
+                            <li><span class="sch-time">@(m.Success ? m.Groups[1].Value : "")</span><span class="sch-text">@(m.Success ? m.Groups[2].Value : line)</span></li>
+                        }
+                    </ol>
+                </section>
+            }
+
+            @if (similar.Any())
+            {
+                <section class="prose-block"><h2>More in @Model.Category</h2>
+                    <div class="card-grid card-grid-sm">@foreach (var ev in similar) { <partial name="_EventCard" model="ev" /> }</div>
+                </section>
+            }
+        </div>
+
+        <aside class="panel action-panel" aria-label="Registration">
+            <div class="seats @(Model.IsFull ? "is-full" : "")">
+                <div class="meter" role="img" aria-label="@taken of @Model.Capacity registered"><i style="width:@(pct)%"></i></div>
+                <small><b>@taken</b> of @Model.Capacity registered, <b>@Model.SeatsLeft</b> left</small>
+            </div>
+
+            @if (Model.IsCancelled)
+            {
+                <p class="muted">This event was cancelled, so registration is closed.</p>
+            }
+            else if (!signedIn)
+            {
+                <a class="btn btn-primary btn-block" asp-controller="Account" asp-action="Login" asp-route-returnUrl="@Url.Action("Details", "Events", new { id = Model.Id })">Log in to register</a>
+                <p class="muted small center">New? <a asp-controller="Account" asp-action="Register">Create a student account</a></p>
+            }
+            else if (isStudent && mine != null)
+            {
+                <p class="status-ok"><svg class="ic"><use href="#i-circle-check"/></svg>You're registered</p>
+                <p class="muted small">@(mine.Attended ? "Checked in at " + mine.Attendance.CheckedInAt.ToString("hh:mm tt, dd MMM") : "Not checked in yet. Show your QR pass at the venue.")</p>
+                <a class="btn btn-primary btn-block" asp-controller="Student" asp-action="Pass" asp-route-id="@mine.Id"><svg class="ic"><use href="#i-qr-code"/></svg>Show my QR pass</a>
+                <a class="btn btn-ghost btn-block" asp-action="Calendar" asp-route-id="@Model.Id"><svg class="ic"><use href="#i-calendar-check"/></svg>Add to calendar</a>
+                @if (!mine.Attended && Model.EventDate > DateTime.Now)
+                {
+                    <form asp-action="Unregister" asp-route-id="@Model.Id" method="post"
+                          data-confirm="Your seat will be released for other students." data-confirm-title="Cancel your registration?" data-confirm-ok="Cancel registration">
+                        <button class="btn btn-link-danger btn-block">Cancel registration</button>
+                    </form>
+                }
+            }
+            else if (isStudent)
+            {
+                if (Model.RegistrationOpen)
+                {
+                    <form asp-action="Register" asp-route-id="@Model.Id" method="post"><button class="btn btn-primary btn-block">Register for this event</button></form>
+                    <p class="muted small center">Registration closes @closes.ToString("dd MMM, hh:mm tt").</p>
+                }
+                else
+                {
+                    <button class="btn btn-block" disabled>@(Model.IsFull ? "Event is full" : Model.IsPast ? "Event finished" : "Registration closed")</button>
+                    <p class="muted small center">@(Model.IsFull ? "Check back later in case someone cancels." : "You can't register for this event any more.")</p>
+                }
+                <a class="btn btn-ghost btn-block" asp-action="Calendar" asp-route-id="@Model.Id"><svg class="ic"><use href="#i-calendar-check"/></svg>Add to calendar</a>
+            }
+            else
+            {
+                <p class="muted">Organizer and admin accounts don't register for events.</p>
+                @if (canManage)
+                {
+                    <a class="btn btn-primary btn-block" asp-controller="Organizer" asp-action="Participants" asp-route-id="@Model.Id"><svg class="ic"><use href="#i-users"/></svg>Manage participants</a>
+                    <a class="btn btn-ghost btn-block" asp-controller="Organizer" asp-action="Scanner" asp-route-id="@Model.Id"><svg class="ic"><use href="#i-scan-line"/></svg>Open QR scanner</a>
+                }
+            }
+
+            <button type="button" class="btn btn-ghost btn-block" data-share data-url="@url" data-title="@Model.Title"><svg class="ic"><use href="#i-share-2"/></svg>Share event</button>
+        </aside>
+    </div>
+</article>

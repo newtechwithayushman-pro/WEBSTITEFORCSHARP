@@ -1,0 +1,35 @@
+@model List<Notification>
+@{
+    int unread = (int)ViewBag.Unread;
+    string IconFor(string t) => t switch { "registration" => "ticket", "reminder" => "clock", "attendance" => "user-check", "certificate" => "award", "cancelled" => "ban", "update" => "megaphone", _ => "info" };
+}
+<div class="bell" data-bell>
+    <button class="icon-btn bell-btn" type="button" aria-label="Notifications (@unread unread)" aria-expanded="false" aria-haspopup="true">
+        <svg class="ic"><use href="#i-bell"/></svg>
+        @if (unread > 0) { <span class="bell-count">@(unread > 9 ? "9+" : unread.ToString())</span> }
+    </button>
+    <div class="bell-menu" hidden>
+        <div class="bell-head"><strong>Notifications</strong><span class="muted">@unread unread</span></div>
+        @if (!Model.Any())
+        {
+            <p class="bell-empty muted">Nothing yet. Registrations, reminders and check-ins show up here.</p>
+        }
+        else
+        {
+            <ul class="bell-list">
+                @foreach (var n in Model)
+                {
+                    <li class="@(n.IsRead ? "" : "is-unread")">
+                        <form asp-controller="Account" asp-action="MarkRead" asp-route-id="@n.Id" method="post">
+                            <button class="bell-item">
+                                <span class="n-ic n-@n.Type"><svg class="ic"><use href="#i-@IconFor(n.Type)"/></svg></span>
+                                <span class="n-body"><strong>@n.Title</strong><span>@n.Message</span><small>@n.CreatedOn.ToString("dd MMM, hh:mm tt")</small></span>
+                            </button>
+                        </form>
+                    </li>
+                }
+            </ul>
+        }
+        <a class="bell-foot" asp-controller="Account" asp-action="Notifications">See all notifications</a>
+    </div>
+</div>

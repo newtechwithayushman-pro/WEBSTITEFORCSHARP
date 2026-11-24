@@ -1,0 +1,11 @@
+@model CollegeEvent
+@{ ViewData["Title"] = "Create event"; }
+<div class="page-head-app"><h1>Create an event</h1><p class="muted">Students can register as soon as you publish it.</p></div>
+<form asp-action="Create" method="post" class="panel form-panel form-wide">
+    <div asp-validation-summary="ModelOnly" class="alert alert-error"></div>
+    <partial name="_EventForm" />
+    <div class="form-actions">
+        <button class="btn btn-primary" type="submit">Publish event</button>
+        <a class="btn btn-ghost" asp-action="Dashboard">Cancel</a>
+    </div>
+</form>

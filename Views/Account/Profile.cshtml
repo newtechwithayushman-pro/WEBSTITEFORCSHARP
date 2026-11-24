@@ -1,0 +1,51 @@
+@model ProfileViewModel
+@{ ViewData["Title"] = "Profile"; Layout = "_Dashboard"; }
+
+<div class="page-head-app"><h1>Profile</h1><p class="muted">Your details and password.</p></div>
+
+<div class="two-col">
+    <form asp-action="Profile" method="post" class="panel form-panel">
+        <h2 class="h3">Your details</h2>
+        <div asp-validation-summary="ModelOnly" class="alert alert-error"></div>
+        <dl class="kv">
+            <div><dt>Email</dt><dd>@ViewBag.Email</dd></div>
+            <div><dt>Role</dt><dd>@ViewBag.Role</dd></div>
+            <div><dt>Member since</dt><dd>@(((DateTime)ViewBag.Joined).ToString("dd MMM yyyy"))</dd></div>
+        </dl>
+        <div class="field">
+            <label asp-for="FullName">Full name</label>
+            <input asp-for="FullName" maxlength="80" required />
+            <span asp-validation-for="FullName" class="field-error"></span>
+        </div>
+        <div class="field">
+            <label asp-for="Department">Department</label>
+            <select asp-for="Department" asp-items="@(new SelectList(EventCategories.Departments, Model.Department))"></select>
+            <span asp-validation-for="Department" class="field-error"></span>
+        </div>
+
+        <h2 class="h3 sub">Change password</h2>
+        <p class="muted small">Leave these blank to keep your current password.</p>
+        <div class="field-row">
+            <div class="field">
+                <label asp-for="CurrentPassword">Current password</label>
+                <input asp-for="CurrentPassword" autocomplete="current-password" />
+                <span asp-validation-for="CurrentPassword" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="NewPassword">New password</label>
+                <input asp-for="NewPassword" autocomplete="new-password" minlength="6" />
+                <span asp-validation-for="NewPassword" class="field-error"></span>
+            </div>
+        </div>
+        <div class="form-actions"><button class="btn btn-primary" type="submit">Save changes</button></div>
+    </form>
+
+    <aside class="panel">
+        <h2 class="h3">Appearance</h2>
+        <p class="muted">Choose the theme that's easiest on your eyes. It's remembered on this device.</p>
+        <button type="button" class="btn btn-ghost theme-toggle-btn"><svg class="ic icon-moon"><use href="#i-moon"/></svg><svg class="ic icon-sun"><use href="#i-sun"/></svg>Switch theme</button>
+        <h2 class="h3 sub">Notifications</h2>
+        <p class="muted">Alerts appear inside CAMPUSLY: registrations, reminders, check-ins and changes to events you joined.</p>
+        <a class="btn btn-ghost" asp-action="Notifications">Open notifications</a>
+    </aside>
+</div>

@@ -1,0 +1,105 @@
+@model List<Registration>
+@{
+    ViewData["Title"] = "My activities";
+    var upcoming = Model.Where(r => !r.CollegeEvent.IsPast).ToList();
+    var past = Model.Where(r => r.CollegeEvent.IsPast).OrderByDescending(r => r.CollegeEvent.EventDate).ToList();
+}
+
+<div class="page-head-app head-row">
+    <div><h1>My activities</h1><p class="muted">Your registrations, QR passes and participation history.</p></div>
+    <a class="btn btn-ghost" asp-controller="Events" asp-action="Index"><svg class="ic"><use href="#i-search"/></svg>Find events</a>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="empty-card"><h3>You haven't registered for anything yet</h3><p class="muted">Register for an event and your QR pass will show up here.</p><a class="btn btn-primary" asp-controller="Events" asp-action="Index">Browse events</a></div>
+}
+else
+{
+    <div class="tabs" data-tabs>
+        <div class="tablist" role="tablist" aria-label="My activities">
+            <button role="tab" id="tab-up" aria-controls="panel-up" aria-selected="true">Upcoming <span class="count">@upcoming.Count</span></button>
+            <button role="tab" id="tab-past" aria-controls="panel-past" aria-selected="false" tabindex="-1">History <span class="count">@past.Count</span></button>
+        </div>
+
+        <div role="tabpanel" id="panel-up" aria-labelledby="tab-up">
+            @if (!upcoming.Any()) { <div class="empty-card"><h3>No upcoming passes</h3><a class="btn btn-ghost" asp-controller="Events" asp-action="Index">Find an event</a></div> }
+            <div class="pass-list">
+                @foreach (var r in upcoming)
+                {
+                    var ev = r.CollegeEvent;
+                    <article class="pass-row cat-@EventCategories.Slug(ev.Category)">
+                        <div class="up-date"><b>@ev.EventDate.ToString("dd")</b>@ev.EventDate.ToString("MMM")</div>
+                        <div class="pass-main">
+                            <p class="ec-cat"><i class="dot"></i>@ev.Category<span class="sep"></span>@ev.Host</p>
+                            <h3><a asp-controller="Events" asp-action="Details" asp-route-id="@ev.Id">@ev.Title</a></h3>
+                            <p class="meta"><svg class="ic"><use href="#i-clock"/></svg>@ev.EventDate.ToString("ddd hh:mm tt")<span class="sep"></span><svg class="ic"><use href="#i-map-pin"/></svg>@ev.Location</p>
+                            <p class="meta small">Registered @r.RegisteredOn.ToString("dd MMM yyyy")</p>
+                        </div>
+                        <div class="pass-status">
+                            @if (ev.IsCancelled) { <span class="badge badge-danger">Cancelled</span> }
+                            else if (r.Attended) { <span class="badge badge-ok"><svg class="ic"><use href="#i-check"/></svg>Checked in</span> }
+                            else { <span class="badge badge-info">Registered</span> }
+                        </div>
+                        <div class="pass-actions">
+                            @if (!ev.IsCancelled)
+                            {
+                                <button type="button" class="btn btn-primary btn-sm" data-qr-open data-token="@(TokenService.Prefix + r.QrToken)" data-code="@TokenService.Pretty(r.QrToken)" data-title="@ev.Title" data-when="@ev.EventDate.ToString("ddd, dd MMM, hh:mm tt")"><svg class="ic"><use href="#i-qr-code"/></svg>QR pass</button>
+                                <a class="btn btn-ghost btn-sm" asp-controller="Events" asp-action="Calendar" asp-route-id="@ev.Id"><svg class="ic"><use href="#i-calendar-check"/></svg>Calendar</a>
+                            }
+                            @if (!r.Attended && ev.EventDate > DateTime.Now)
+                            {
+                                <form asp-controller="Events" asp-action="Unregister" asp-route-id="@ev.Id" method="post"
+                                      data-confirm="Your seat will be released for other students." data-confirm-title="Cancel your registration?" data-confirm-ok="Cancel registration">
+                                    <button class="btn btn-link-danger btn-sm">Cancel</button>
+                                </form>
+                            }
+                        </div>
+                    </article>
+                }
+            </div>
+        </div>
+
+        <div role="tabpanel" id="panel-past" aria-labelledby="tab-past" hidden>
+            @if (!past.Any()) { <div class="empty-card"><h3>No history yet</h3></div> }
+            <div class="pass-list">
+                @foreach (var r in past)
+                {
+                    var ev = r.CollegeEvent;
+                    <article class="pass-row is-past cat-@EventCategories.Slug(ev.Category)">
+                        <div class="up-date"><b>@ev.EventDate.ToString("dd")</b>@ev.EventDate.ToString("MMM yy")</div>
+                        <div class="pass-main">
+                            <p class="ec-cat"><i class="dot"></i>@ev.Category<span class="sep"></span>@ev.Host</p>
+                            <h3><a asp-controller="Events" asp-action="Details" asp-route-id="@ev.Id">@ev.Title</a></h3>
+                            <p class="meta"><svg class="ic"><use href="#i-map-pin"/></svg>@ev.Location</p>
+                        </div>
+                        <div class="pass-status">
+                            @if (ev.IsCancelled) { <span class="badge badge-danger">Cancelled</span> }
+                            else if (r.Attended) { <span class="badge badge-ok"><svg class="ic"><use href="#i-check"/></svg>Attended @r.Attendance.CheckedInAt.ToString("hh:mm tt")</span> }
+                            else { <span class="badge badge-muted">Missed</span> }
+                        </div>
+                        <div class="pass-actions">
+                            @if (r.Attended && !ev.IsCancelled) { <a class="btn btn-ghost btn-sm" asp-action="Certificate" asp-route-id="@r.Id"><svg class="ic"><use href="#i-award"/></svg>Certificate</a> }
+                        </div>
+                    </article>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+<dialog id="pass-dialog" class="dialog dialog-qr">
+    <form method="dialog">
+        <p class="muted small" id="pd-when"></p>
+        <h2 id="pd-title">QR pass</h2>
+        <div class="qr-tile"><div class="qr" id="pd-qr" data-size="260"></div></div>
+        <p class="pass-code" id="pd-code"></p>
+        <p class="muted small center">Show this at the venue. Organizers scan it to mark your attendance. You can also read out the code above.</p>
+        <div class="dialog-actions"><button class="btn btn-primary" value="close">Done</button></div>
+    </form>
+</dialog>
+
+@section Scripts {
+    <script src="~/lib/qrcode.js"></script>
+    <script src="~/js/qr.js" asp-append-version="true"></script>
+}

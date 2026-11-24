@@ -1,0 +1,43 @@
+@model CollegeEvent
+@{
+    bool registered = ViewData["Registered"] is bool b && b;
+    int taken = Model.Registrations.Count;
+    int pct = Model.Capacity == 0 ? 0 : Math.Min(100, (int)Math.Round(100.0 * taken / Model.Capacity));
+    var left = Model.RegistrationDeadline - DateTime.Now;
+    string deadline = Model.IsPast ? "Event finished"
+        : Model.EventDate <= DateTime.Now ? "Happening now"
+        : Model.RegistrationDeadline < DateTime.Now ? "Registration closed"
+        : left.TotalHours < 24 ? "Closes today"
+        : left.TotalDays < 7 ? $"Closes in {(int)Math.Ceiling(left.TotalDays)} days"
+        : "Closes " + Model.RegistrationDeadline.ToString("dd MMM");
+}
+<article class="event-card cat-@EventCategories.Slug(Model.Category)"
+         data-category="@Model.Category"
+         data-date="@Model.EventDate.ToString("s")"
+         data-seats="@Model.SeatsLeft"
+         data-pop="@taken"
+         data-created="@Model.Id"
+         data-open="@(Model.RegistrationOpen ? "1" : "0")"
+         data-past="@(Model.IsPast ? "1" : "0")"
+         data-mine="@(registered ? "1" : "0")"
+         data-title="@Model.Title.ToLowerInvariant()"
+         data-search="@((Model.Title + " " + Model.Host + " " + Model.Location + " " + Model.Category + " " + Model.Description).ToLowerInvariant())">
+    <div class="ec-cover">
+        <partial name="_Cover" model="Model" />
+        <span class="badge badge-@Model.StatusTone ec-status">@Model.Status</span>
+        @if (registered) { <span class="badge badge-solid ec-mine"><svg class="ic"><use href="#i-check"/></svg>Registered</span> }
+    </div>
+    <div class="ec-body">
+        <p class="ec-cat"><i class="dot"></i>@Model.Category<span class="sep"></span><span class="ec-host">@Model.Host</span></p>
+        <h3 class="ec-title"><a class="stretched" asp-controller="Events" asp-action="Details" asp-route-id="@Model.Id">@Model.Title</a></h3>
+        <p class="meta"><svg class="ic"><use href="#i-calendar"/></svg>@Model.EventDate.ToString("ddd, dd MMM") at @Model.EventDate.ToString("hh:mm tt")</p>
+        <p class="meta"><svg class="ic"><use href="#i-map-pin"/></svg>@Model.Location</p>
+        <div class="ec-foot">
+            <div class="seats @(Model.IsFull ? "is-full" : "")">
+                <div class="meter" role="img" aria-label="@taken of @Model.Capacity registered"><i style="width:@(pct)%"></i></div>
+                <small><b>@taken</b> / @Model.Capacity registered</small>
+            </div>
+            <small class="ec-deadline">@deadline</small>
+        </div>
+    </div>
+</article>

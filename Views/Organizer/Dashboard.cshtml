@@ -1,0 +1,48 @@
+@model OrganizerDashboardVm
+@{ ViewData["Title"] = Model.IsAdminView ? "All events" : "My events"; }
+
+<div class="page-head-app head-row">
+    <div><h1>@(Model.IsAdminView ? "All events" : "Organizer dashboard")</h1><p class="muted">Create events, track registrations and scan passes at the door.</p></div>
+    <a class="btn btn-primary" asp-action="Create"><svg class="ic"><use href="#i-plus"/></svg>Create event</a>
+</div>
+
+<div class="kpi-row">
+    <div class="kpi"><span class="kpi-ic"><svg class="ic"><use href="#i-calendar-days"/></svg></span><span>Upcoming events</span><b data-count="@Model.UpcomingCount">0</b></div>
+    <div class="kpi"><span class="kpi-ic"><svg class="ic"><use href="#i-ticket"/></svg></span><span>Registrations</span><b data-count="@Model.TotalRegistrations">0</b></div>
+    <div class="kpi"><span class="kpi-ic"><svg class="ic"><use href="#i-user-check"/></svg></span><span>Check-ins</span><b data-count="@Model.TotalCheckIns">0</b></div>
+    <div class="kpi kpi-ring">
+        <div class="ring" style="--p:@Model.AttendancePercent" role="img" aria-label="Attendance @Model.AttendancePercent percent"><span>@Model.AttendancePercent%</span></div>
+        <div><span>Participation rate</span><small class="muted">check-ins of registrations, finished events</small></div>
+    </div>
+</div>
+
+<div class="two-col two-col-even">
+    <section class="panel chart-panel">
+        <div class="panel-head"><h2 class="h3">Registered vs checked in</h2><span class="muted small">Recent finished events</span></div>
+        <div class="chart-box"><div class="skeleton"></div><canvas data-chart="bar" data-source="#o-per" data-names="Registered,Checked in" aria-label="Registrations and check-ins per event"></canvas></div>
+        <script type="application/json" id="o-per">@Json.Serialize(Model.PerEvent)</script>
+    </section>
+    <section class="panel chart-panel">
+        <div class="panel-head"><h2 class="h3">Registration trend</h2><span class="muted small">Last 14 days</span></div>
+        <div class="chart-box"><div class="skeleton"></div><canvas data-chart="line" data-source="#o-trend" data-names="Registrations" aria-label="Registrations per day"></canvas></div>
+        <script type="application/json" id="o-trend">@Json.Serialize(Model.Trend)</script>
+    </section>
+</div>
+
+<section class="panel">
+    <div class="panel-head"><h2 class="h3">@(Model.IsAdminView ? "Events" : "Your events")</h2></div>
+    @if (!Model.Events.Any())
+    {
+        <div class="empty-inline"><h3>No events yet</h3><p class="muted">Create your first event and students can start registering.</p><a class="btn btn-primary btn-sm" asp-action="Create">Create event</a></div>
+    }
+    else
+    {
+        ViewData["ShowOwner"] = Model.IsAdminView;
+        <partial name="_EventTable" model="Model.Events" view-data="ViewData" />
+    }
+</section>
+
+@section Scripts {
+    <script src="~/lib/chart.umd.js"></script>
+    <script src="~/js/charts.js" asp-append-version="true"></script>
+}

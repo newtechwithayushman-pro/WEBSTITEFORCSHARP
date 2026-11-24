@@ -1,0 +1,61 @@
+@model AdminDashboardVm
+@{ ViewData["Title"] = "Campus overview"; }
+
+<div class="page-head-app head-row">
+    <div><h1>Campus overview</h1><p class="muted">The whole event ecosystem at a glance.</p></div>
+    <a class="btn btn-ghost" asp-action="Reports"><svg class="ic"><use href="#i-file-text"/></svg>Reports</a>
+</div>
+
+<div class="kpi-row kpi-row-6">
+    <div class="kpi"><span class="kpi-ic"><svg class="ic"><use href="#i-graduation-cap"/></svg></span><span>Students</span><b data-count="@Model.Students">0</b></div>
+    <div class="kpi"><span class="kpi-ic"><svg class="ic"><use href="#i-megaphone"/></svg></span><span>Organizers</span><b data-count="@Model.Organizers">0</b></div>
+    <div class="kpi"><span class="kpi-ic"><svg class="ic"><use href="#i-calendar-days"/></svg></span><span>Events</span><b data-count="@Model.Events">0</b><small class="muted">@Model.UpcomingEvents upcoming</small></div>
+    <div class="kpi"><span class="kpi-ic"><svg class="ic"><use href="#i-ticket"/></svg></span><span>Registrations</span><b data-count="@Model.Registrations">0</b></div>
+    <div class="kpi"><span class="kpi-ic"><svg class="ic"><use href="#i-user-check"/></svg></span><span>Check-ins</span><b data-count="@Model.CheckIns">0</b></div>
+    <div class="kpi kpi-ring">
+        <div class="ring" style="--p:@Model.AttendancePercent"><span>@Model.AttendancePercent%</span></div>
+        <div><span>Attendance</span><small class="muted">finished events</small></div>
+    </div>
+</div>
+
+<div class="two-col two-col-even">
+    <section class="panel chart-panel">
+        <div class="panel-head"><h2 class="h3">Registrations and check-ins</h2><span class="muted small">Last 6 months</span></div>
+        <div class="chart-box"><div class="skeleton"></div><canvas data-chart="line" data-source="#a-monthly" data-names="Registrations,Check-ins" aria-label="Campus registrations and check-ins by month"></canvas></div>
+        <script type="application/json" id="a-monthly">@Json.Serialize(Model.Monthly)</script>
+    </section>
+    <section class="panel chart-panel">
+        <div class="panel-head"><h2 class="h3">Events and registrations by category</h2></div>
+        <div class="chart-box"><div class="skeleton"></div><canvas data-chart="bar" data-source="#a-cats" data-names="Events,Registrations" aria-label="Events and registrations by category"></canvas></div>
+        <script type="application/json" id="a-cats">@Json.Serialize(Model.ByCategory)</script>
+    </section>
+</div>
+
+<div class="two-col two-col-even">
+    <section class="panel chart-panel">
+        <div class="panel-head"><h2 class="h3">Most registered events</h2></div>
+        <div class="chart-box"><div class="skeleton"></div><canvas data-chart="hbar" data-source="#a-top" data-names="Registrations" aria-label="Top events by registrations"></canvas></div>
+        <script type="application/json" id="a-top">@Json.Serialize(Model.TopEvents)</script>
+    </section>
+    <div class="stack">
+        <section class="panel">
+            <div class="panel-head"><h2 class="h3">Users by role</h2><a class="link-arrow" asp-action="Users">Manage users <svg class="ic"><use href="#i-arrow-right"/></svg></a></div>
+            <div class="chart-box chart-box-sm"><div class="skeleton"></div><canvas data-chart="doughnut" data-source="#a-roles" aria-label="Users by role"></canvas></div>
+            <script type="application/json" id="a-roles">@Json.Serialize(Model.Roles)</script>
+        </section>
+        <section class="panel">
+            <div class="panel-head"><h2 class="h3">Latest registrations</h2></div>
+            <ol class="timeline">
+                @foreach (var t in Model.Recent)
+                {
+                    <li class="tl-registered"><span class="tl-dot"><svg class="ic"><use href="#i-ticket"/></svg></span><div><a asp-controller="Events" asp-action="Details" asp-route-id="@t.EventId">@t.Text</a><small>@t.When.ToString("dd MMM yyyy, hh:mm tt")</small></div></li>
+                }
+            </ol>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/chart.umd.js"></script>
+    <script src="~/js/charts.js" asp-append-version="true"></script>
+}

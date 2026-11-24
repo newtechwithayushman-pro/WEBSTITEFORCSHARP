@@ -1,0 +1,53 @@
+@model List<User>
+@{
+    ViewData["Title"] = "Users";
+    var owned = (Dictionary<int, int>)ViewBag.OwnedCounts;
+    var regs = (Dictionary<int, int>)ViewBag.RegCounts;
+    int me = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+}
+
+<div class="page-head-app"><h1>Users</h1><p class="muted">Change roles to create organizers and administrators. Role changes apply the next time that person signs in.</p></div>
+
+<section class="panel">
+    <div class="toolbar">
+        <label class="search"><svg class="ic"><use href="#i-search"/></svg><span class="sr-only">Search users</span><input type="search" id="table-search" placeholder="Search by name, email or department" autocomplete="off" /></label>
+        <label class="select"><span class="sr-only">Role</span>
+            <select id="table-filter"><option value="all">All roles</option><option value="student">Students</option><option value="organizer">Organizers</option><option value="admin">Admins</option></select>
+        </label>
+    </div>
+    <div class="table-wrap">
+        <table class="data" id="people-table">
+            <thead><tr><th>Name</th><th>Department</th><th>Role</th><th>Activity</th><th class="right">Actions</th></tr></thead>
+            <tbody>
+                @foreach (var u in Model)
+                {
+                    int events = owned.ContainsKey(u.Id) ? owned[u.Id] : 0;
+                    int mine = regs.ContainsKey(u.Id) ? regs[u.Id] : 0;
+                    <tr data-search="@((u.FullName + " " + u.Email + " " + u.Department).ToLowerInvariant())" data-group="@u.Role.ToLowerInvariant()">
+                        <td><strong>@u.FullName</strong>@if (u.Id == me) { <span class="badge badge-info badge-sm">You</span> }<small class="muted block">@u.Email</small></td>
+                        <td>@u.Department</td>
+                        <td>
+                            <form asp-action="SetRole" asp-route-id="@u.Id" method="post" class="role-form">
+                                <label class="sr-only" for="role-@u.Id">Role for @u.FullName</label>
+                                <select id="role-@u.Id" name="role" class="select-sm" disabled="@(u.Id == me ? "disabled" : null)">
+                                    @foreach (var r in Roles.All) { <option value="@r" selected="@(r == u.Role ? "selected" : null)">@r</option> }
+                                </select>
+                                @if (u.Id != me) { <button class="btn btn-ghost btn-sm">Save</button> }
+                            </form>
+                        </td>
+                        <td><small class="muted">@(u.Role == Roles.Student ? mine + " registrations" : events + " events")</small></td>
+                        <td class="right actions">
+                            @if (u.Id != me)
+                            {
+                                <form asp-action="DeleteUser" asp-route-id="@u.Id" method="post" class="inline" data-confirm="@u.FullName and their registrations will be removed. You can't undo this." data-confirm-title="Delete this user?" data-confirm-ok="Delete user">
+                                    <button class="icon-btn danger" aria-label="Delete @u.FullName" title="Delete"><svg class="ic"><use href="#i-trash-2"/></svg></button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <p class="empty-row" id="table-empty" hidden>No users match.</p>
+    </div>
+</section>

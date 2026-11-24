@@ -1,0 +1,6 @@
+Third-party files bundled so the site works offline:
+- Chart.js 4.6.1 (MIT)            chart.umd.js
+- qrcode-generator (MIT)         qrcode.js
+- jsQR (Apache-2.0)              jsQR.js
+- Lucide icons (ISC)             inlined in Views/Shared/_Icons.cshtml
+- Bricolage Grotesque, Instrument Sans (SIL OFL 1.1)   wwwroot/fonts

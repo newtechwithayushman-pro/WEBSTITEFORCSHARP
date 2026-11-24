@@ -1,0 +1,10 @@
+@model List<CollegeEvent>
+@{ ViewData["Title"] = "All events"; }
+<div class="page-head-app head-row">
+    <div><h1>All events</h1><p class="muted">Every event on campus. Admins can manage any of them.</p></div>
+    <a class="btn btn-primary" asp-controller="Organizer" asp-action="Create"><svg class="ic"><use href="#i-plus"/></svg>Create event</a>
+</div>
+<section class="panel">
+    @{ ViewData["ShowOwner"] = true; }
+    <partial name="_EventTable" model="Model" view-data="ViewData" />
+</section>

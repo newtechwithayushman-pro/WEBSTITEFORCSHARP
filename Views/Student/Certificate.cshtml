@@ -1,0 +1,25 @@
+@model Registration
+@{
+    ViewData["Title"] = "Certificate";
+    var ev = Model.CollegeEvent;
+}
+<div class="page-head-app no-print head-row">
+    <a class="back" asp-action="Activities"><svg class="ic flip"><use href="#i-arrow-right"/></svg>My activities</a>
+    <button type="button" class="btn btn-primary" onclick="window.print()"><svg class="ic"><use href="#i-printer"/></svg>Print or save as PDF</button>
+</div>
+
+<section class="certificate cat-@EventCategories.Slug(ev.Category)" aria-label="Certificate of participation">
+    <div class="cert-inner">
+        <p class="cert-brand">CAMPUSLY</p>
+        <h1 class="cert-title">Certificate of Participation</h1>
+        <p class="cert-line">This certifies that</p>
+        <p class="cert-name">@Model.User.FullName</p>
+        <p class="cert-line">attended and participated in</p>
+        <p class="cert-event">@ev.Title</p>
+        <p class="cert-line">hosted by @ev.Host on @ev.EventDate.ToString("dd MMMM yyyy") at @ev.Location.</p>
+        <div class="cert-foot">
+            <div><strong>@Model.Attendance.CheckedInAt.ToString("dd MMM yyyy, hh:mm tt")</strong><small>Attendance recorded</small></div>
+            <div><strong>@ViewBag.Code</strong><small>Certificate code</small></div>
+        </div>
+    </div>
+</section>

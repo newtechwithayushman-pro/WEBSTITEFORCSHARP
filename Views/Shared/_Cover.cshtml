@@ -1,0 +1,5 @@
+@* Generated event cover: category colour, a seeded gradient and a large category icon. No image files needed. *@
+@model CollegeEvent
+<div class="cover cat-@EventCategories.Slug(Model.Category)" style="--seed:@(Model.Id % 7)" aria-hidden="true">
+    <svg class="cover-ic"><use href="#i-@EventCategories.Icon(Model.Category)"/></svg>
+</div>

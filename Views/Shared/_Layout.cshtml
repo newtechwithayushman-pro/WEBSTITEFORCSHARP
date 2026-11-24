@@ -1,0 +1,95 @@
+@* Public layout: landing page, explore, event details, sign in / sign up *@
+@{
+    var ctrl = (ViewContext.RouteData.Values["controller"] ?? "").ToString();
+    var act = (ViewContext.RouteData.Values["action"] ?? "").ToString();
+    string Active(string c, string a = null) => ctrl == c && (a == null || act == a) ? "is-active" : "";
+    bool signedIn = User.Identity != null && User.Identity.IsAuthenticated;
+    bool isStudent = User.IsInRole("Student");
+    string dashController = User.IsInRole("Admin") ? "Admin" : User.IsInRole("Organizer") ? "Organizer" : "Student";
+}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <partial name="_Head" />
+    <title>@ViewData["Title"] - CAMPUSLY</title>
+</head>
+<body class="site">
+    <partial name="_Icons" />
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="site-header">
+        <div class="wrap bar">
+            <a class="brand" asp-controller="Home" asp-action="Index" aria-label="CAMPUSLY home"><partial name="_Brand" /></a>
+
+            <nav id="site-nav" class="site-nav" aria-label="Main">
+                <a class="@Active("Home", "Index")" asp-controller="Home" asp-action="Index">Home</a>
+                <a class="@Active("Events")" asp-controller="Events" asp-action="Index">Explore events</a>
+                @if (!signedIn || isStudent)
+                {
+                    <a class="@Active("Student", "Activities")" asp-controller="Student" asp-action="Activities">My activities</a>
+                }
+                <a class="@Active("Home", "About")" asp-controller="Home" asp-action="About">About</a>
+
+                <div class="nav-end">
+                    <button class="icon-btn theme-toggle" type="button" aria-label="Switch colour theme">
+                        <svg class="ic icon-moon"><use href="#i-moon"/></svg>
+                        <svg class="ic icon-sun"><use href="#i-sun"/></svg>
+                    </button>
+                    @if (signedIn)
+                    {
+                        @await Component.InvokeAsync("NotificationBell")
+                        <a class="btn btn-primary btn-sm" asp-controller="@dashController" asp-action="Dashboard"><svg class="ic"><use href="#i-layout-dashboard"/></svg>Dashboard</a>
+                    }
+                    else
+                    {
+                        <a class="btn btn-ghost btn-sm" asp-controller="Account" asp-action="Login">Log in</a>
+                        <a class="btn btn-primary btn-sm" asp-controller="Account" asp-action="Register">Sign up</a>
+                    }
+                </div>
+            </nav>
+
+            <button class="icon-btn nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="site-nav"><svg class="ic"><use href="#i-menu"/></svg></button>
+        </div>
+    </header>
+
+    <main id="main">
+        @RenderBody()
+    </main>
+
+    <footer class="site-footer">
+        <div class="wrap footer-grid">
+            <div>
+                <a class="brand" asp-controller="Home" asp-action="Index"><partial name="_Brand" /></a>
+                <p class="muted">The digital campus event platform: discover events, register in seconds, check in with a QR pass and keep a record of everything you attend.</p>
+            </div>
+            <div>
+                <h4>Platform</h4>
+                <ul>
+                    <li><a asp-controller="Events" asp-action="Index">Explore events</a></li>
+                    <li><a asp-controller="Student" asp-action="Activities">My activities</a></li>
+                    <li><a asp-controller="Home" asp-action="About">About CAMPUSLY</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>For organizers</h4>
+                <ul>
+                    <li><a asp-controller="Organizer" asp-action="Dashboard">Organizer dashboard</a></li>
+                    <li><a asp-controller="Organizer" asp-action="Create">Create an event</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>Account</h4>
+                <ul>
+                    @if (signedIn) { <li><a asp-controller="Account" asp-action="Profile">Profile</a></li> <li><a asp-controller="Account" asp-action="Notifications">Notifications</a></li> }
+                    else { <li><a asp-controller="Account" asp-action="Login">Log in</a></li> <li><a asp-controller="Account" asp-action="Register">Sign up</a></li> }
+                </ul>
+            </div>
+        </div>
+        <div class="wrap legal"><small>Built with ASP.NET Core MVC for a CA-3 project. Events, people and testimonials shown are demo data.</small></div>
+    </footer>
+
+    <partial name="_Chrome" />
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

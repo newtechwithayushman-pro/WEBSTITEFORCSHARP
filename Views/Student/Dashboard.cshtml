@@ -1,0 +1,132 @@
+@model StudentDashboardVm
+@{
+    ViewData["Title"] = "Overview";
+    string first = Model.Student.FullName.Split(' ')[0];
+    int hour = DateTime.Now.Hour;
+    string greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+    string IconFor(string t) => t switch { "registration" => "ticket", "reminder" => "clock", "attendance" => "user-check", "certificate" => "award", "cancelled" => "ban", "update" => "megaphone", _ => "info" };
+    string TlIcon(string k) => k switch { "attended" => "user-check", "certificate" => "award", _ => "ticket" };
+}
+
+<div class="page-head-app head-row">
+    <div>
+        <h1>@greeting, @first</h1>
+        <p class="muted">@DateTime.Now.ToString("dddd, dd MMMM") &middot; @Model.Student.Department</p>
+    </div>
+    <a class="btn btn-primary" asp-controller="Events" asp-action="Index"><svg class="ic"><use href="#i-search"/></svg>Find events</a>
+</div>
+
+<div class="kpi-row">
+    <div class="kpi"><span class="kpi-ic"><svg class="ic"><use href="#i-ticket"/></svg></span><span>Registrations</span><b data-count="@Model.TotalRegistrations">0</b></div>
+    <div class="kpi"><span class="kpi-ic"><svg class="ic"><use href="#i-user-check"/></svg></span><span>Events attended</span><b data-count="@Model.Attended">0</b></div>
+    <div class="kpi kpi-ring">
+        <div class="ring" style="--p:@Model.AttendancePercent" role="img" aria-label="Attendance @Model.AttendancePercent percent"><span>@Model.AttendancePercent%</span></div>
+        <div><span>Attendance rate</span><small class="muted">of past events you registered for</small></div>
+    </div>
+    <div class="kpi"><span class="kpi-ic"><svg class="ic"><use href="#i-award"/></svg></span><span>Certificates</span><b data-count="@Model.Certificates">0</b></div>
+</div>
+
+<div class="dash-grid">
+    <div class="dash-main">
+        @if (Model.NextUp != null)
+        {
+            var nu = Model.NextUp; var ev = nu.CollegeEvent;
+            <section class="panel next-up cat-@EventCategories.Slug(ev.Category)">
+                <div class="nu-cover"><partial name="_Cover" model="ev" /></div>
+                <div class="nu-body">
+                    <p class="ec-cat"><i class="dot"></i>Next up<span class="sep"></span>@ev.Category</p>
+                    <h2 class="h3"><a asp-controller="Events" asp-action="Details" asp-route-id="@ev.Id">@ev.Title</a></h2>
+                    <p class="meta"><svg class="ic"><use href="#i-calendar"/></svg>@ev.EventDate.ToString("ddd, dd MMM") at @ev.EventDate.ToString("hh:mm tt")<span class="sep"></span><svg class="ic"><use href="#i-map-pin"/></svg>@ev.Location</p>
+                    <div class="countdown countdown-sm" data-target="@ev.EventDate.ToString("s")">
+                        <div><b data-unit="d">0</b><small>days</small></div><div><b data-unit="h">0</b><small>hours</small></div><div><b data-unit="m">0</b><small>min</small></div><div><b data-unit="s">0</b><small>sec</small></div>
+                    </div>
+                    <div class="row-actions">
+                        <a class="btn btn-primary btn-sm" asp-action="Pass" asp-route-id="@nu.Id"><svg class="ic"><use href="#i-qr-code"/></svg>Show QR pass</a>
+                        <a class="btn btn-ghost btn-sm" asp-controller="Events" asp-action="Calendar" asp-route-id="@ev.Id"><svg class="ic"><use href="#i-calendar-check"/></svg>Add to calendar</a>
+                    </div>
+                </div>
+            </section>
+        }
+        else
+        {
+            <section class="panel empty-inline"><h2 class="h3">No upcoming registrations</h2><p class="muted">Pick something from the recommendations below, or browse everything on campus.</p><a class="btn btn-primary btn-sm" asp-controller="Events" asp-action="Index">Browse events</a></section>
+        }
+
+        <section class="panel chart-panel">
+            <div class="panel-head"><h2 class="h3">Participation over time</h2><span class="muted small">Last 6 months</span></div>
+            <div class="chart-box"><div class="skeleton"></div><canvas data-chart="bar" data-source="#d-monthly" data-names="Registered,Attended" aria-label="Your registrations and attendance by month"></canvas></div>
+            <script type="application/json" id="d-monthly">@Json.Serialize(Model.Monthly)</script>
+        </section>
+
+        <section class="panel">
+            <div class="panel-head"><h2 class="h3">Upcoming registered events</h2><a class="link-arrow" asp-action="Activities">All activities <svg class="ic"><use href="#i-arrow-right"/></svg></a></div>
+            @if (!Model.UpcomingRegistrations.Any()) { <p class="muted">You haven't registered for any upcoming events yet.</p> }
+            <ul class="row-list">
+                @foreach (var r in Model.UpcomingRegistrations)
+                {
+                    <li class="cat-@EventCategories.Slug(r.CollegeEvent.Category)">
+                        <span class="up-date"><b>@r.CollegeEvent.EventDate.ToString("dd")</b>@r.CollegeEvent.EventDate.ToString("MMM")</span>
+                        <span class="up-main"><a asp-controller="Events" asp-action="Details" asp-route-id="@r.CollegeEventId"><strong>@r.CollegeEvent.Title</strong></a><small>@r.CollegeEvent.EventDate.ToString("hh:mm tt"), @r.CollegeEvent.Location</small></span>
+                        <span class="badge badge-ok">Registered</span>
+                        <a class="icon-btn" asp-action="Pass" asp-route-id="@r.Id" aria-label="QR pass for @r.CollegeEvent.Title" title="QR pass"><svg class="ic"><use href="#i-qr-code"/></svg></a>
+                    </li>
+                }
+            </ul>
+        </section>
+
+        <section class="panel">
+            <div class="panel-head"><h2 class="h3">Recommended for you</h2><span class="muted small">Based on what you attend</span></div>
+            @if (!Model.Recommendations.Any()) { <p class="muted">No open events to recommend right now.</p> }
+            <div class="card-grid card-grid-sm">
+                @foreach (var ev in Model.Recommendations) { <partial name="_EventCard" model="ev" /> }
+            </div>
+        </section>
+    </div>
+
+    <aside class="dash-side">
+        <section class="panel">
+            <div class="panel-head"><h2 class="h3">Calendar</h2></div>
+            <div class="mini-cal" data-calendar data-source="#d-cal"></div>
+            <div class="cal-list" id="cal-list" aria-live="polite"></div>
+            <script type="application/json" id="d-cal">@Json.Serialize(Model.CalendarEvents)</script>
+        </section>
+
+        <section class="panel">
+            <div class="panel-head"><h2 class="h3">Categories you join</h2></div>
+            @if (Model.ByCategory.Labels.Any())
+            {
+                <div class="chart-box chart-box-sm"><div class="skeleton"></div><canvas data-chart="doughnut" data-source="#d-cats" aria-label="Your registrations by category"></canvas></div>
+                <script type="application/json" id="d-cats">@Json.Serialize(Model.ByCategory)</script>
+            }
+            else { <p class="muted">Register for an event to see your categories.</p> }
+        </section>
+
+        <section class="panel">
+            <div class="panel-head"><h2 class="h3">Activity</h2></div>
+            @if (!Model.Timeline.Any()) { <p class="muted">Your activity will appear here.</p> }
+            <ol class="timeline">
+                @foreach (var t in Model.Timeline)
+                {
+                    <li class="tl-@t.Kind"><span class="tl-dot"><svg class="ic"><use href="#i-@TlIcon(t.Kind)"/></svg></span><div><a asp-controller="Events" asp-action="Details" asp-route-id="@t.EventId">@t.Text</a><small>@t.When.ToString("dd MMM yyyy, hh:mm tt")</small></div></li>
+                }
+            </ol>
+        </section>
+
+        <section class="panel">
+            <div class="panel-head"><h2 class="h3">Notifications</h2><a class="link-arrow" asp-controller="Account" asp-action="Notifications">View all</a></div>
+            @if (!Model.Notifications.Any()) { <p class="muted">No notifications yet.</p> }
+            <ul class="mini-notices">
+                @foreach (var n in Model.Notifications)
+                {
+                    <li class="@(n.IsRead ? "" : "is-unread")"><span class="n-ic n-@n.Type"><svg class="ic"><use href="#i-@IconFor(n.Type)"/></svg></span><div><strong>@n.Title</strong><span>@n.Message</span></div></li>
+                }
+            </ul>
+        </section>
+    </aside>
+</div>
+
+@section Scripts {
+    <script src="~/lib/chart.umd.js"></script>
+    <script src="~/js/charts.js" asp-append-version="true"></script>
+    <script src="~/js/calendar.js" asp-append-version="true"></script>
+}

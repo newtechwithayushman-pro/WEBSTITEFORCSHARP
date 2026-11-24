@@ -1,0 +1,24 @@
+@{ ViewData["Title"] = "About"; }
+<section class="page-head">
+    <div class="wrap narrow">
+        <h1 class="h1-md">About CAMPUSLY</h1>
+        <p class="lead">A unified platform for college event registration and participation tracking, built for a smart, digital campus.</p>
+    </div>
+</section>
+<section class="section tight">
+    <div class="wrap narrow prose">
+        <h2>The problem</h2>
+        <p>Campus events are announced on notice boards and chat groups, registered on paper or forms, and attendance is taken on sheets that are rarely looked at again. Students can't prove what they attended. Organizers can't see who actually came.</p>
+        <h2>What CAMPUSLY does</h2>
+        <ul class="check-list">
+            <li><svg class="ic"><use href="#i-circle-check"/></svg><span><strong>Students</strong> discover events, register, carry a QR pass, and see their participation history and certificates.</span></li>
+            <li><svg class="ic"><use href="#i-circle-check"/></svg><span><strong>Organizers</strong> create and manage events, scan QR passes at the door and export participant lists.</span></li>
+            <li><svg class="ic"><use href="#i-circle-check"/></svg><span><strong>Administrators</strong> see the whole campus: users, roles, events, registrations and attendance reports.</span></li>
+        </ul>
+        <h2>How it is built</h2>
+        <p>CAMPUSLY is an ASP.NET Core 8 MVC application. Controllers, Razor views, Entity Framework Core, cookie authentication with roles, and a small amount of vanilla JavaScript for the interactive parts. Charts use Chart.js and QR codes use a bundled generator and decoder, so the site works offline.</p>
+        <h2>About the demo data</h2>
+        <p>Every event, student, organizer and testimonial in this build is sample data created for the project. Notifications appear inside the site only; nothing is sent by e-mail, SMS or push.</p>
+        <p><a class="btn btn-primary" asp-controller="Events" asp-action="Index">Explore events</a></p>
+    </div>
+</section>

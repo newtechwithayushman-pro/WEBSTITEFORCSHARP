@@ -1,0 +1,60 @@
+@* Table of events with management actions. Used by the organizer dashboard and the admin "All events" page. *@
+@model List<CollegeEvent>
+@{ bool showOwner = ViewData["ShowOwner"] is bool b && b; }
+<div class="toolbar">
+    <label class="search">
+        <svg class="ic"><use href="#i-search"/></svg>
+        <span class="sr-only">Search events</span>
+        <input type="search" id="table-search" placeholder="Search events" autocomplete="off" />
+    </label>
+    <label class="select"><span class="sr-only">Show</span>
+        <select id="table-filter">
+            <option value="upcoming">Upcoming</option>
+            <option value="past">Past</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="all">All events</option>
+        </select>
+    </label>
+</div>
+
+<div class="table-wrap">
+    <table class="data" id="event-table">
+        <thead><tr><th>Event</th><th>Date</th>@if (showOwner) { <th>Owner</th> }<th>Registrations</th><th>Checked in</th><th class="right">Actions</th></tr></thead>
+        <tbody>
+            @foreach (var ev in Model)
+            {
+                string group = ev.IsCancelled ? "cancelled" : ev.IsPast ? "past" : "upcoming";
+                int taken = ev.Registrations.Count;
+                int inCount = ev.Registrations.Count(r => r.Attended);
+                <tr data-search="@((ev.Title + " " + ev.Host + " " + ev.Category + " " + ev.Location).ToLowerInvariant())" data-group="@group">
+                    <td>
+                        <div class="cell-title cat-@EventCategories.Slug(ev.Category)"><i class="dot"></i><a asp-controller="Events" asp-action="Details" asp-route-id="@ev.Id"><strong>@ev.Title</strong></a></div>
+                        <small class="muted">@ev.Category, @ev.Host <span class="badge badge-@ev.StatusTone badge-sm">@ev.Status</span></small>
+                    </td>
+                    <td>@ev.EventDate.ToString("dd MMM yyyy")<small class="muted block">@ev.EventDate.ToString("hh:mm tt")</small></td>
+                    @if (showOwner) { <td>@ev.Organizer.FullName</td> }
+                    <td>
+                        <div class="mini-bar" title="@taken of @ev.Capacity seats"><div class="meter"><i style="width:@(taken * 100 / Math.Max(1, ev.Capacity))%"></i></div><small>@taken / @ev.Capacity</small></div>
+                    </td>
+                    <td>@inCount<small class="muted"> (@Analytics.Percent(inCount, taken)%)</small></td>
+                    <td class="right actions">
+                        <a class="icon-btn" asp-controller="Organizer" asp-action="Participants" asp-route-id="@ev.Id" aria-label="Participants of @ev.Title" title="Participants"><svg class="ic"><use href="#i-users"/></svg></a>
+                        <a class="icon-btn" asp-controller="Organizer" asp-action="Scanner" asp-route-id="@ev.Id" aria-label="Scan QR for @ev.Title" title="QR scanner"><svg class="ic"><use href="#i-scan-line"/></svg></a>
+                        <a class="icon-btn" asp-controller="Organizer" asp-action="Edit" asp-route-id="@ev.Id" aria-label="Edit @ev.Title" title="Edit"><svg class="ic"><use href="#i-pencil"/></svg></a>
+                        <form asp-controller="Organizer" asp-action="ToggleCancel" asp-route-id="@ev.Id" method="post" class="inline"
+                              data-confirm="@(ev.IsCancelled ? "The event will be reinstated and registered students notified." : "Registered students will be notified that this event is cancelled.")"
+                              data-confirm-title="@(ev.IsCancelled ? "Reinstate this event?" : "Cancel this event?")" data-confirm-ok="@(ev.IsCancelled ? "Reinstate" : "Cancel event")">
+                            <button class="icon-btn" aria-label="@(ev.IsCancelled ? "Reinstate" : "Cancel") @ev.Title" title="@(ev.IsCancelled ? "Reinstate" : "Cancel event")"><svg class="ic"><use href="#i-@(ev.IsCancelled ? "rotate-ccw" : "ban")"/></svg></button>
+                        </form>
+                        <form asp-controller="Organizer" asp-action="Delete" asp-route-id="@ev.Id" method="post" class="inline"
+                              data-confirm="This removes the event, its @taken registrations and attendance records. You can't undo this."
+                              data-confirm-title="Delete this event?" data-confirm-ok="Delete event">
+                            <button class="icon-btn danger" aria-label="Delete @ev.Title" title="Delete"><svg class="ic"><use href="#i-trash-2"/></svg></button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <p class="empty-row" id="table-empty" hidden>No events match.</p>
+</div>

@@ -1,0 +1,69 @@
+@model CollegeEvent
+@{
+    ViewData["Title"] = "QR scanner";
+    int total = Model.Registrations.Count;
+    int inCount = Model.Registrations.Count(r => r.Attended);
+    var recent = Model.Registrations.Where(r => r.Attended).OrderByDescending(r => r.Attendance.CheckedInAt).Take(8).ToList();
+}
+
+<div class="page-head-app head-row">
+    <div>
+        <a class="back" asp-action="Participants" asp-route-id="@Model.Id"><svg class="ic flip"><use href="#i-arrow-right"/></svg>Participants</a>
+        <h1>Check-in: @Model.Title</h1>
+        <p class="muted">@Model.EventDate.ToString("ddd, dd MMM, hh:mm tt") &middot; @Model.Location</p>
+    </div>
+</div>
+
+@if (Model.IsCancelled) { <div class="alert alert-error">This event is cancelled, so check-in is disabled.</div> }
+
+<div id="scan-root" class="scan-grid" data-event-id="@Model.Id" data-url="@Url.Action("CheckIn", "Organizer")" data-total="@total" data-in="@inCount">
+    @Html.AntiForgeryToken()
+
+    <section class="panel scan-cam">
+        <div class="scan-view" id="scan-view">
+            <video id="scan-video" playsinline muted></video>
+            <div class="scan-frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+            <div class="scan-idle" id="scan-idle"><svg class="ic"><use href="#i-camera"/></svg><p>Camera is off</p></div>
+        </div>
+        <canvas id="scan-canvas" hidden></canvas>
+        <div class="scan-result" id="scan-result" role="status" aria-live="polite" hidden></div>
+        <div class="row-actions">
+            <button type="button" class="btn btn-primary" id="scan-start"><svg class="ic"><use href="#i-camera"/></svg>Start camera</button>
+            <button type="button" class="btn btn-ghost" id="scan-stop" hidden><svg class="ic"><use href="#i-camera-off"/></svg>Stop</button>
+            <label class="btn btn-ghost" for="scan-file"><svg class="ic"><use href="#i-upload"/></svg>Scan an image</label>
+            <input type="file" id="scan-file" accept="image/*" hidden />
+        </div>
+        <p class="muted small" id="scan-help">Camera scanning needs permission and works on <code>localhost</code> or HTTPS. No camera? Use the code box or upload a screenshot of the pass.</p>
+    </section>
+
+    <section class="scan-side">
+        <div class="panel">
+            <div class="panel-head"><h2 class="h3">Checked in</h2></div>
+            <p class="scan-count"><b id="scan-in">@inCount</b><span class="muted"> of <span id="scan-total">@total</span> registered</span></p>
+            <div class="meter"><i id="scan-bar" style="width:@(total == 0 ? 0 : inCount * 100 / total)%"></i></div>
+        </div>
+
+        <form class="panel" id="scan-form" autocomplete="off">
+            <div class="panel-head"><h2 class="h3">Enter a pass code</h2></div>
+            <p class="muted small">Type the code shown under the student's QR (hyphens optional) or paste the scanned text.</p>
+            <div class="field"><label for="scan-code" class="sr-only">Pass code</label><input id="scan-code" placeholder="ABCDE-FGHIJ-KLMNO-PQRST" spellcheck="false" autocapitalize="characters" /></div>
+            <button class="btn btn-primary btn-block" type="submit"><svg class="ic"><use href="#i-user-check"/></svg>Check in</button>
+        </form>
+
+        <div class="panel">
+            <div class="panel-head"><h2 class="h3">Recent check-ins</h2></div>
+            <ul class="log-list" id="scan-log">
+                @foreach (var r in recent)
+                {
+                    <li><span class="n-ic n-attendance"><svg class="ic"><use href="#i-user-check"/></svg></span><div><strong>@r.User.FullName</strong><small>@r.Attendance.CheckedInAt.ToString("hh:mm tt") via @r.Attendance.Method</small></div></li>
+                }
+                @if (!recent.Any()) { <li class="log-empty muted">No one has checked in yet.</li> }
+            </ul>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <script src="~/lib/jsQR.js"></script>
+    <script src="~/js/scanner.js" asp-append-version="true"></script>
+}

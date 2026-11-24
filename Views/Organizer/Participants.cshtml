@@ -1,0 +1,92 @@
+@model ParticipantsVm
+@{
+    ViewData["Title"] = "Participants";
+    var ev = Model.Event;
+    int total = Model.Registrations.Count;
+    bool admin = User.IsInRole("Admin");
+}
+
+<div class="page-head-app head-row">
+    <div>
+        <a class="back" asp-controller="@(admin ? "Admin" : "Organizer")" asp-action="@(admin ? "Events" : "Dashboard")"><svg class="ic flip"><use href="#i-arrow-right"/></svg>@(admin ? "All events" : "My events")</a>
+        <h1>@ev.Title</h1>
+        <p class="muted">@ev.EventDate.ToString("ddd, dd MMM yyyy, hh:mm tt") &middot; @ev.Location &middot; <span class="badge badge-@ev.StatusTone badge-sm">@ev.Status</span></p>
+    </div>
+    <div class="row-actions">
+        <a class="btn btn-primary" asp-action="Scanner" asp-route-id="@ev.Id"><svg class="ic"><use href="#i-scan-line"/></svg>QR scanner</a>
+        <a class="btn btn-ghost" asp-action="ExportCsv" asp-route-id="@ev.Id"><svg class="ic"><use href="#i-download"/></svg>Export CSV</a>
+        <a class="btn btn-ghost" asp-action="Edit" asp-route-id="@ev.Id"><svg class="ic"><use href="#i-pencil"/></svg>Edit</a>
+    </div>
+</div>
+
+<div class="kpi-row">
+    <div class="kpi"><span class="kpi-ic"><svg class="ic"><use href="#i-ticket"/></svg></span><span>Registered</span><b>@total</b></div>
+    <div class="kpi"><span class="kpi-ic"><svg class="ic"><use href="#i-user-check"/></svg></span><span>Checked in</span><b>@Model.CheckedIn</b></div>
+    <div class="kpi kpi-ring">
+        <div class="ring" style="--p:@Analytics.Percent(Model.CheckedIn, total)"><span>@Analytics.Percent(Model.CheckedIn, total)%</span></div>
+        <div><span>Participation rate</span><small class="muted">@Model.CheckedIn of @total registered</small></div>
+    </div>
+    <div class="kpi"><span class="kpi-ic"><svg class="ic"><use href="#i-users"/></svg></span><span>Seats left</span><b>@ev.SeatsLeft</b></div>
+</div>
+
+<section class="panel">
+    <div class="toolbar">
+        <label class="search">
+            <svg class="ic"><use href="#i-search"/></svg>
+            <span class="sr-only">Search participants</span>
+            <input type="search" id="table-search" placeholder="Search by name, email or department" autocomplete="off" />
+        </label>
+        <label class="select"><span class="sr-only">Filter</span>
+            <select id="table-filter">
+                <option value="all">All participants</option>
+                <option value="in">Checked in</option>
+                <option value="pending">Not checked in</option>
+            </select>
+        </label>
+    </div>
+
+    @if (!Model.Registrations.Any())
+    {
+        <div class="empty-inline"><h3>No registrations yet</h3><p class="muted">Students who register will appear here.</p></div>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table class="data" id="people-table">
+                <thead><tr><th>#</th><th>Student</th><th>Department</th><th>Registered</th><th>Status</th><th class="right">Actions</th></tr></thead>
+                <tbody>
+                    @{ int n = 1; }
+                    @foreach (var r in Model.Registrations)
+                    {
+                        <tr data-search="@((r.User.FullName + " " + r.User.Email + " " + r.User.Department).ToLowerInvariant())" data-group="@(r.Attended ? "in" : "pending")">
+                            <td>@(n++)</td>
+                            <td><strong>@r.User.FullName</strong><small class="muted block">@r.User.Email</small></td>
+                            <td>@r.User.Department</td>
+                            <td>@r.RegisteredOn.ToString("dd MMM, hh:mm tt")</td>
+                            <td>
+                                @if (r.Attended) { <span class="badge badge-ok"><svg class="ic"><use href="#i-check"/></svg>Checked in</span><small class="muted block">@r.Attendance.CheckedInAt.ToString("hh:mm tt") via @r.Attendance.Method</small> }
+                                else { <span class="badge badge-muted">Registered</span> }
+                            </td>
+                            <td class="right actions">
+                                @if (r.Attended)
+                                {
+                                    <form asp-action="UndoCheckIn" asp-route-id="@r.Id" method="post" class="inline" data-confirm="This removes the attendance record for @r.User.FullName." data-confirm-title="Undo check-in?" data-confirm-ok="Undo check-in">
+                                        <button class="btn btn-ghost btn-sm"><svg class="ic"><use href="#i-rotate-ccw"/></svg>Undo</button>
+                                    </form>
+                                }
+                                else if (!ev.IsCancelled)
+                                {
+                                    <form asp-action="ManualCheckIn" asp-route-id="@r.Id" method="post" class="inline"><button class="btn btn-primary btn-sm"><svg class="ic"><use href="#i-user-check"/></svg>Check in</button></form>
+                                }
+                                <form asp-action="RemoveParticipant" asp-route-id="@r.Id" method="post" class="inline" data-confirm="@r.User.FullName will lose their seat and QR pass." data-confirm-title="Remove this participant?" data-confirm-ok="Remove">
+                                    <button class="icon-btn danger" aria-label="Remove @r.User.FullName" title="Remove"><svg class="ic"><use href="#i-trash-2"/></svg></button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <p class="empty-row" id="table-empty" hidden>No participants match.</p>
+        </div>
+    }
+</section>

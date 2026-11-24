@@ -1,0 +1,48 @@
+@model Registration
+@{
+    ViewData["Title"] = "QR pass";
+    var ev = Model.CollegeEvent;
+}
+
+<div class="page-head-app no-print"><a class="back" asp-action="Activities"><svg class="ic flip"><use href="#i-arrow-right"/></svg>My activities</a></div>
+
+<div class="pass-wrap">
+    <article class="pass-ticket cat-@EventCategories.Slug(ev.Category)">
+        <div class="pt-stub" aria-hidden="true">
+            <span class="pt-day">@ev.EventDate.ToString("dd")</span>
+            <span class="pt-mon">@ev.EventDate.ToString("MMM")</span>
+            <span class="pt-dow">@ev.EventDate.ToString("yyyy")</span>
+            <svg class="ic pt-ic"><use href="#i-@EventCategories.Icon(ev.Category)"/></svg>
+        </div>
+        <div class="pt-main">
+            <p class="ec-cat"><i class="dot"></i>@ev.Category<span class="sep"></span>@ev.Host</p>
+            <h1 class="h2-md">@ev.Title</h1>
+            <p class="meta"><svg class="ic"><use href="#i-clock"/></svg>@ev.EventDate.ToString("dddd, dd MMM yyyy 'at' hh:mm tt")</p>
+            <p class="meta"><svg class="ic"><use href="#i-map-pin"/></svg>@ev.Location</p>
+            <hr class="pt-rule" />
+            <p class="pt-label">Pass holder</p>
+            <p class="pt-name">@Model.User.FullName</p>
+            <p class="muted small">@Model.User.Department</p>
+            <p class="pt-label">Status</p>
+            @if (ev.IsCancelled) { <span class="badge badge-danger">Event cancelled</span> }
+            else if (Model.Attended) { <span class="badge badge-ok"><svg class="ic"><use href="#i-check"/></svg>Checked in at @Model.Attendance.CheckedInAt.ToString("hh:mm tt, dd MMM")</span> }
+            else { <span class="badge badge-info">Registered. Not checked in yet</span> }
+        </div>
+        <div class="pt-qr">
+            <div class="qr-tile"><div class="qr" id="pass-qr" data-qr="@(TokenService.Prefix + Model.QrToken)" data-size="240"></div></div>
+            <p class="pass-code">@TokenService.Pretty(Model.QrToken)</p>
+            <p class="muted small center">Scan at the venue, or read out the code.</p>
+        </div>
+    </article>
+
+    <div class="row-actions no-print center">
+        <button type="button" class="btn btn-primary" onclick="window.print()"><svg class="ic"><use href="#i-printer"/></svg>Print pass</button>
+        <a class="btn btn-ghost" asp-controller="Events" asp-action="Calendar" asp-route-id="@ev.Id"><svg class="ic"><use href="#i-calendar-check"/></svg>Add to calendar</a>
+        <a class="btn btn-ghost" asp-controller="Events" asp-action="Details" asp-route-id="@ev.Id">Event details</a>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/qrcode.js"></script>
+    <script src="~/js/qr.js" asp-append-version="true"></script>
+}

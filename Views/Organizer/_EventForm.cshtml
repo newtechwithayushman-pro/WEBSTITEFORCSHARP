@@ -1,0 +1,64 @@
+@model CollegeEvent
+
+<div class="field">
+    <label asp-for="Title">Event title</label>
+    <input asp-for="Title" maxlength="100" required />
+    <span asp-validation-for="Title" class="field-error"></span>
+</div>
+<div class="field">
+    <label asp-for="Description">Description</label>
+    <textarea asp-for="Description" rows="5" maxlength="2000" required data-count="2000"></textarea>
+    <small class="muted char-count" aria-live="polite"></small>
+    <span asp-validation-for="Description" class="field-error"></span>
+</div>
+<div class="field-row">
+    <div class="field">
+        <label asp-for="Category">Category</label>
+        <select asp-for="Category" asp-items="@(new SelectList(EventCategories.All, Model.Category))"></select>
+        <span asp-validation-for="Category" class="field-error"></span>
+    </div>
+    <div class="field">
+        <label asp-for="Host">Organizer / host</label>
+        <input asp-for="Host" maxlength="100" placeholder="e.g. Robotics Society" required />
+        <span asp-validation-for="Host" class="field-error"></span>
+    </div>
+</div>
+<div class="field-row">
+    <div class="field">
+        <label asp-for="EventDate">Date and time</label>
+        <input asp-for="EventDate" required />
+        <span asp-validation-for="EventDate" class="field-error"></span>
+    </div>
+    <div class="field">
+        <label asp-for="DurationMinutes">Duration (minutes)</label>
+        <input asp-for="DurationMinutes" type="number" min="15" max="1440" step="15" required />
+        <span asp-validation-for="DurationMinutes" class="field-error"></span>
+    </div>
+</div>
+<div class="field-row">
+    <div class="field">
+        <label asp-for="Location">Venue</label>
+        <input asp-for="Location" maxlength="100" required />
+        <span asp-validation-for="Location" class="field-error"></span>
+    </div>
+    <div class="field">
+        <label asp-for="Capacity">Registration capacity</label>
+        <input asp-for="Capacity" type="number" min="1" max="5000" required />
+        <span asp-validation-for="Capacity" class="field-error"></span>
+    </div>
+</div>
+<div class="field">
+    <label asp-for="RegistrationDeadline">Registration deadline</label>
+    <input asp-for="RegistrationDeadline" required />
+    <span asp-validation-for="RegistrationDeadline" class="field-error"></span>
+</div>
+<div class="field">
+    <label asp-for="Requirements">Requirements <span class="muted">(optional, one per line)</span></label>
+    <textarea asp-for="Requirements" rows="3" maxlength="1000"></textarea>
+    <span asp-validation-for="Requirements" class="field-error"></span>
+</div>
+<div class="field">
+    <label asp-for="Schedule">Schedule <span class="muted">(optional, one item per line, e.g. "10:00 Opening")</span></label>
+    <textarea asp-for="Schedule" rows="4" maxlength="1500"></textarea>
+    <span asp-validation-for="Schedule" class="field-error"></span>
+</div>

@@ -1,0 +1,106 @@
+@* App shell for Student, Organizer and Admin pages: sidebar (desktop), tab bar (mobile), top bar *@
+@{
+    var ctrl = (ViewContext.RouteData.Values["controller"] ?? "").ToString();
+    var act = (ViewContext.RouteData.Values["action"] ?? "").ToString();
+    string Active(string c, string a = null) => ctrl == c && (a == null || act == a) ? "is-active" : "";
+    bool isAdmin = User.IsInRole("Admin");
+    bool isOrganizer = User.IsInRole("Organizer");
+    string role = isAdmin ? "Administrator" : isOrganizer ? "Organizer" : "Student";
+    string name = User.Identity.Name ?? "";
+}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <partial name="_Head" />
+    <title>@ViewData["Title"] - CAMPUSLY</title>
+</head>
+<body class="app">
+    <partial name="_Icons" />
+    <a class="skip" href="#main">Skip to content</a>
+
+    <aside class="sidebar" aria-label="Sidebar">
+        <a class="brand" asp-controller="Home" asp-action="Index" aria-label="CAMPUSLY home"><partial name="_Brand" /></a>
+
+        <nav class="side-nav" aria-label="Dashboard">
+            @if (isAdmin)
+            {
+                <p class="side-label">Campus</p>
+                <a class="@Active("Admin", "Dashboard")" asp-controller="Admin" asp-action="Dashboard"><svg class="ic"><use href="#i-layout-dashboard"/></svg>Overview</a>
+                <a class="@Active("Admin", "Users")" asp-controller="Admin" asp-action="Users"><svg class="ic"><use href="#i-users"/></svg>Users</a>
+                <a class="@Active("Admin", "Events") @Active("Organizer", "Participants") @Active("Organizer", "Scanner") @Active("Organizer", "Edit")" asp-controller="Admin" asp-action="Events"><svg class="ic"><use href="#i-calendar-days"/></svg>All events</a>
+                <a class="@Active("Admin", "Reports")" asp-controller="Admin" asp-action="Reports"><svg class="ic"><use href="#i-file-text"/></svg>Reports</a>
+                <p class="side-label">Organizing</p>
+                <a class="@Active("Organizer", "Create")" asp-controller="Organizer" asp-action="Create"><svg class="ic"><use href="#i-plus"/></svg>Create event</a>
+            }
+            else if (isOrganizer)
+            {
+                <p class="side-label">Organizer</p>
+                <a class="@Active("Organizer", "Dashboard") @Active("Organizer", "Participants") @Active("Organizer", "Scanner") @Active("Organizer", "Edit")" asp-controller="Organizer" asp-action="Dashboard"><svg class="ic"><use href="#i-layout-dashboard"/></svg>My events</a>
+                <a class="@Active("Organizer", "Create")" asp-controller="Organizer" asp-action="Create"><svg class="ic"><use href="#i-plus"/></svg>Create event</a>
+            }
+            else
+            {
+                <p class="side-label">Student</p>
+                <a class="@Active("Student", "Dashboard")" asp-controller="Student" asp-action="Dashboard"><svg class="ic"><use href="#i-layout-dashboard"/></svg>Overview</a>
+                <a class="@Active("Student", "Activities") @Active("Student", "Pass") @Active("Student", "Certificate")" asp-controller="Student" asp-action="Activities"><svg class="ic"><use href="#i-ticket"/></svg>My activities</a>
+            }
+            <p class="side-label">Explore</p>
+            <a class="@Active("Events")" asp-controller="Events" asp-action="Index"><svg class="ic"><use href="#i-search"/></svg>Explore events</a>
+            <a class="@Active("Account", "Notifications")" asp-controller="Account" asp-action="Notifications"><svg class="ic"><use href="#i-bell"/></svg>Notifications</a>
+            <a class="@Active("Account", "Profile")" asp-controller="Account" asp-action="Profile"><svg class="ic"><use href="#i-user"/></svg>Profile</a>
+        </nav>
+
+        <form asp-controller="Account" asp-action="Logout" method="post" class="side-user">
+            <span class="avatar" aria-hidden="true">@(name.Length > 0 ? name.Substring(0, 1).ToUpper() : "?")</span>
+            <span class="user-meta"><strong>@name</strong><small>@role</small></span>
+            <button class="icon-btn" aria-label="Sign out" title="Sign out"><svg class="ic"><use href="#i-log-out"/></svg></button>
+        </form>
+    </aside>
+
+    <div class="app-main">
+        <header class="topbar">
+            <a class="brand brand-compact" asp-controller="Home" asp-action="Index" aria-label="CAMPUSLY home"><partial name="_Brand" /></a>
+            <p class="topbar-title">@ViewData["Title"]</p>
+            <div class="topbar-end">
+                <button class="icon-btn theme-toggle" type="button" aria-label="Switch colour theme">
+                    <svg class="ic icon-moon"><use href="#i-moon"/></svg>
+                    <svg class="ic icon-sun"><use href="#i-sun"/></svg>
+                </button>
+                @await Component.InvokeAsync("NotificationBell")
+            </div>
+        </header>
+
+        <main id="main" class="app-content">
+            @RenderBody()
+        </main>
+    </div>
+
+    <nav class="tabbar" aria-label="Quick navigation">
+        @if (isAdmin)
+        {
+            <a class="@Active("Admin", "Dashboard")" asp-controller="Admin" asp-action="Dashboard"><svg class="ic"><use href="#i-layout-dashboard"/></svg><span>Overview</span></a>
+            <a class="@Active("Admin", "Users")" asp-controller="Admin" asp-action="Users"><svg class="ic"><use href="#i-users"/></svg><span>Users</span></a>
+            <a class="@Active("Admin", "Events") @Active("Organizer")" asp-controller="Admin" asp-action="Events"><svg class="ic"><use href="#i-calendar-days"/></svg><span>Events</span></a>
+            <a class="@Active("Admin", "Reports")" asp-controller="Admin" asp-action="Reports"><svg class="ic"><use href="#i-file-text"/></svg><span>Reports</span></a>
+        }
+        else if (isOrganizer)
+        {
+            <a class="@Active("Organizer", "Dashboard") @Active("Organizer", "Participants") @Active("Organizer", "Scanner")" asp-controller="Organizer" asp-action="Dashboard"><svg class="ic"><use href="#i-layout-dashboard"/></svg><span>Events</span></a>
+            <a class="@Active("Organizer", "Create")" asp-controller="Organizer" asp-action="Create"><svg class="ic"><use href="#i-plus"/></svg><span>Create</span></a>
+            <a class="@Active("Events")" asp-controller="Events" asp-action="Index"><svg class="ic"><use href="#i-search"/></svg><span>Explore</span></a>
+        }
+        else
+        {
+            <a class="@Active("Student", "Dashboard")" asp-controller="Student" asp-action="Dashboard"><svg class="ic"><use href="#i-layout-dashboard"/></svg><span>Overview</span></a>
+            <a class="@Active("Events")" asp-controller="Events" asp-action="Index"><svg class="ic"><use href="#i-search"/></svg><span>Explore</span></a>
+            <a class="@Active("Student", "Activities") @Active("Student", "Pass")" asp-controller="Student" asp-action="Activities"><svg class="ic"><use href="#i-ticket"/></svg><span>Passes</span></a>
+        }
+        <a class="@Active("Account", "Notifications")" asp-controller="Account" asp-action="Notifications"><svg class="ic"><use href="#i-bell"/></svg><span>Alerts</span></a>
+        <a class="@Active("Account", "Profile")" asp-controller="Account" asp-action="Profile"><svg class="ic"><use href="#i-user"/></svg><span>Profile</span></a>
+    </nav>
+
+    <partial name="_Chrome" />
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

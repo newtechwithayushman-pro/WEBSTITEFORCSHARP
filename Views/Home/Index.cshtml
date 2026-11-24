@@ -1,0 +1,211 @@
+@model HomeVm
+@{
+    ViewData["Title"] = "Every campus moment, one platform";
+    bool signedIn = User.Identity != null && User.Identity.IsAuthenticated;
+    string dash = User.IsInRole("Admin") ? "Admin" : User.IsInRole("Organizer") ? "Organizer" : "Student";
+    var stage = Model.Upcoming.Take(3).ToList();
+    int openNow = Model.Upcoming.Count(e => e.RegistrationOpen);
+}
+
+<section class="hero">
+    <div class="hero-bg" aria-hidden="true"></div>
+    <div class="wrap hero-grid">
+        <div class="hero-copy">
+            <p class="live-pill"><i class="live-dot"></i>@openNow events open for registration right now</p>
+            <h1>Every Campus Moment. One Platform.</h1>
+            <p class="lead">Discover campus events, register in seconds, track your participation and never miss an opportunity to connect, compete or create.</p>
+            <div class="hero-cta">
+                <a class="btn btn-primary btn-lg" asp-controller="Events" asp-action="Index">Explore events <svg class="ic"><use href="#i-arrow-right"/></svg></a>
+                @if (signedIn) { <a class="btn btn-ghost btn-lg" asp-controller="@dash" asp-action="Dashboard">Open my dashboard</a> }
+                else { <a class="btn btn-ghost btn-lg" asp-controller="Account" asp-action="Register">Create a free account</a> }
+            </div>
+        </div>
+
+        <div class="hero-stage" aria-label="Upcoming events preview">
+            @if (!stage.Any())
+            {
+                <div class="stage-empty"><h2>No events scheduled yet</h2><p class="muted">Organizers add events from their dashboard.</p></div>
+            }
+            @for (int i = 0; i < stage.Count; i++)
+            {
+                var ev = stage[i];
+                <a class="stage-card stage-@i cat-@EventCategories.Slug(ev.Category)" asp-controller="Events" asp-action="Details" asp-route-id="@ev.Id">
+                    <partial name="_Cover" model="ev" />
+                    <div class="stage-body">
+                        <p class="ec-cat"><i class="dot"></i>@ev.Category</p>
+                        <h2 class="stage-title">@ev.Title</h2>
+                        <p class="meta"><svg class="ic"><use href="#i-calendar"/></svg>@ev.EventDate.ToString("ddd, dd MMM") at @ev.EventDate.ToString("hh:mm tt")</p>
+                        <p class="meta"><svg class="ic"><use href="#i-map-pin"/></svg>@ev.Location</p>
+                        @if (i == 0)
+                        {
+                            <div class="countdown" data-target="@ev.EventDate.ToString("s")" aria-label="Time until the event starts">
+                                <div><b data-unit="d">0</b><small>days</small></div>
+                                <div><b data-unit="h">0</b><small>hours</small></div>
+                                <div><b data-unit="m">0</b><small>min</small></div>
+                                <div><b data-unit="s">0</b><small>sec</small></div>
+                            </div>
+                        }
+                    </div>
+                </a>
+            }
+            <span class="float-chip chip-a"><svg class="ic"><use href="#i-qr-code"/></svg>QR check-in</span>
+            <span class="float-chip chip-b"><svg class="ic"><use href="#i-circle-check"/></svg>Registered</span>
+        </div>
+    </div>
+
+    <div class="wrap">
+        <div class="hero-stats" aria-label="Campus statistics">
+            <div><b data-count="@Model.EventsHosted">0</b><span>events hosted</span></div>
+            <div><b data-count="@Model.Students">0</b><span>students on the platform</span></div>
+            <div><b data-count="@Model.CheckIns">0</b><span>QR and manual check-ins</span></div>
+            <div><b data-count="@Model.AttendancePercent" data-suffix="%">0</b><span>average attendance rate</span></div>
+        </div>
+    </div>
+</section>
+
+<section class="section" id="featured">
+    <div class="wrap">
+        <div class="section-head">
+            <div><h2>Featured events</h2><p class="muted">The most popular events you can still join.</p></div>
+            <a class="link-arrow" asp-controller="Events" asp-action="Index">Explore all <svg class="ic"><use href="#i-arrow-right"/></svg></a>
+        </div>
+        @if (!Model.Featured.Any())
+        {
+            <div class="empty-card"><h3>No open events right now</h3><p class="muted">Check back soon.</p></div>
+        }
+        else
+        {
+            <div class="card-grid">
+                @foreach (var ev in Model.Featured) { <partial name="_EventCard" model="ev" /> }
+            </div>
+        }
+    </div>
+</section>
+
+<section class="section section-tint">
+    <div class="wrap">
+        <div class="section-head">
+            <div><h2>Upcoming events</h2><p class="muted">Next on the campus calendar.</p></div>
+        </div>
+        <div class="upcoming-list">
+            @foreach (var ev in Model.Upcoming)
+            {
+                <a class="up-row cat-@EventCategories.Slug(ev.Category)" asp-controller="Events" asp-action="Details" asp-route-id="@ev.Id">
+                    <span class="up-date"><b>@ev.EventDate.ToString("dd")</b>@ev.EventDate.ToString("MMM")</span>
+                    <span class="up-main"><strong>@ev.Title</strong><small>@ev.Host, @ev.Location</small></span>
+                    <span class="up-time"><svg class="ic"><use href="#i-clock"/></svg>@ev.EventDate.ToString("hh:mm tt")</span>
+                    <span class="up-seats">@ev.SeatsLeft seats left</span>
+                    <span class="badge badge-@ev.StatusTone">@ev.Status</span>
+                </a>
+            }
+        </div>
+    </div>
+</section>
+
+<section class="section" id="categories">
+    <div class="wrap">
+        <div class="section-head"><div><h2>Browse by category</h2><p class="muted">From hackathons to art shows, pick what you care about.</p></div></div>
+        <div class="cat-grid">
+            @foreach (var c in EventCategories.All)
+            {
+                <a class="cat-tile cat-@EventCategories.Slug(c)" asp-controller="Events" asp-action="Index" asp-route-category="@c">
+                    <span class="cat-ic"><svg class="ic"><use href="#i-@EventCategories.Icon(c)"/></svg></span>
+                    <strong>@c</strong>
+                    <small>@Model.CategoryCounts[c] upcoming</small>
+                </a>
+            }
+        </div>
+    </div>
+</section>
+
+<section class="section section-tint" id="how">
+    <div class="wrap">
+        <div class="section-head"><div><h2>How CAMPUSLY works</h2><p class="muted">Four steps from curiosity to certificate.</p></div></div>
+        <ol class="flow">
+            <li><span class="flow-ic"><svg class="ic"><use href="#i-search"/></svg></span><h3>Discover</h3><p>Search by topic, filter by category and date, and see how many seats are left.</p></li>
+            <li><span class="flow-ic"><svg class="ic"><use href="#i-ticket"/></svg></span><h3>Register</h3><p>One tap saves your seat. Duplicates are blocked and full events say so.</p></li>
+            <li><span class="flow-ic"><svg class="ic"><use href="#i-qr-code"/></svg></span><h3>Check in</h3><p>Show your personal QR pass at the door. Organizers scan it with any camera.</p></li>
+            <li><span class="flow-ic"><svg class="ic"><use href="#i-award"/></svg></span><h3>Track</h3><p>Every event you attend is recorded, with attendance stats and a printable certificate.</p></li>
+        </ol>
+    </div>
+</section>
+
+<section class="section" id="tracking">
+    <div class="wrap split">
+        <div>
+            <h2>Participation, tracked automatically</h2>
+            <p class="lead">Registration says you intended to come. A QR check-in proves you did. CAMPUSLY keeps both, so students see their real record and organizers see who actually showed up.</p>
+            <ul class="check-list">
+                <li><svg class="ic"><use href="#i-circle-check"/></svg>Attendance percentage per student and per event</li>
+                <li><svg class="ic"><use href="#i-circle-check"/></svg>Timestamped check-ins that can't be recorded twice</li>
+                <li><svg class="ic"><use href="#i-circle-check"/></svg>Certificates for events you attended</li>
+            </ul>
+        </div>
+        <div class="panel chart-panel">
+            <div class="panel-head"><h3>Campus participation, last 6 months</h3><span class="muted small">Live data</span></div>
+            <div class="chart-box"><canvas data-chart="bar" data-source="#home-monthly" data-names="Registrations,Check-ins" aria-label="Registrations and check-ins by month"></canvas></div>
+            <script type="application/json" id="home-monthly">@Json.Serialize(Model.Monthly)</script>
+        </div>
+    </div>
+</section>
+
+<section class="section section-tint" id="organizers">
+    <div class="wrap split">
+        <div class="panel">
+            <div class="panel-head"><h3>Active organizers</h3><span class="muted small">By upcoming events</span></div>
+            <ul class="host-list">
+                @foreach (var h in Model.Hosts)
+                {
+                    <li><span class="host-ic"><svg class="ic"><use href="#i-building-2"/></svg></span><strong>@h.Key</strong><span class="muted">@h.Value upcoming @(h.Value == 1 ? "event" : "events")</span></li>
+                }
+            </ul>
+        </div>
+        <div>
+            <h2>Built for the people who run events</h2>
+            <p class="lead">Create an event in a minute, watch registrations arrive, scan passes at the door and export the list when you're done.</p>
+            <ul class="check-list">
+                <li><svg class="ic"><use href="#i-circle-check"/></svg>Capacity, deadlines and cancellations handled for you</li>
+                <li><svg class="ic"><use href="#i-circle-check"/></svg>Camera scanning with a manual code fallback</li>
+                <li><svg class="ic"><use href="#i-circle-check"/></svg>CSV export of every participant</li>
+            </ul>
+            <a class="btn btn-primary" asp-controller="Organizer" asp-action="Create">Host an event <svg class="ic"><use href="#i-arrow-right"/></svg></a>
+        </div>
+    </div>
+</section>
+
+<section class="section" id="experience">
+    <div class="wrap">
+        <div class="section-head"><div><h2>The student experience</h2><p class="muted">Everything about your campus life in one dashboard.</p></div></div>
+        <div class="feature-grid">
+            <article class="feature"><span class="flow-ic"><svg class="ic"><use href="#i-qr-code"/></svg></span><h3>One pass per event</h3><p>Your QR pass is unique to you and that event. No printouts, no lists, no queue at the desk.</p></article>
+            <article class="feature"><span class="flow-ic"><svg class="ic"><use href="#i-chart-column"/></svg></span><h3>Your campus record</h3><p>See what you registered for, what you attended and which categories you take part in most.</p></article>
+            <article class="feature"><span class="flow-ic"><svg class="ic"><use href="#i-bell"/></svg></span><h3>Never miss a change</h3><p>Reminders before events start and alerts when a date, venue or status changes.</p></article>
+        </div>
+    </div>
+</section>
+
+<section class="section section-tint" id="voices">
+    <div class="wrap">
+        <div class="section-head"><div><h2>What students and organizers say</h2><p class="muted">Sample feedback written for this demo.</p></div></div>
+        <div class="quote-grid">
+            <figure class="quote"><blockquote>I registered for three events on the bus and walked in with just my phone. Checking in took two seconds.</blockquote><figcaption><span class="avatar">A</span><span><strong>Ananya G.</strong><small>Computer Science, student</small></span></figcaption></figure>
+            <figure class="quote"><blockquote>I used to chase a paper list. Now I see who registered, who showed up and I export it in one click.</blockquote><figcaption><span class="avatar">N</span><span><strong>Neha K.</strong><small>Technical Club, organizer</small></span></figcaption></figure>
+            <figure class="quote"><blockquote>My attendance record finally shows what I actually did on campus, not just what I signed up for.</blockquote><figcaption><span class="avatar">R</span><span><strong>Rohan D.</strong><small>Electronics, student</small></span></figcaption></figure>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="wrap cta-band">
+        <div><h2>See what's happening this week</h2><p class="muted">Sign in with a demo account and try registering, scanning and tracking yourself.</p></div>
+        <div class="hero-cta">
+            <a class="btn btn-primary btn-lg" asp-controller="Events" asp-action="Index">Explore events</a>
+            @if (!signedIn) { <a class="btn btn-ghost btn-lg" asp-controller="Account" asp-action="Login">Log in</a> }
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script src="~/lib/chart.umd.js"></script>
+    <script src="~/js/charts.js" asp-append-version="true"></script>
+}

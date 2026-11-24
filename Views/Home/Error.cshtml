@@ -1,0 +1,12 @@
+@{ ViewData["Title"] = "Error"; }
+<section class="section">
+    <div class="wrap narrow">
+        <p class="error-code">@ViewBag.Code</p>
+        <h1 class="h1-md">@ViewBag.Heading</h1>
+        <p class="lead">@ViewBag.Message</p>
+        <div class="hero-cta">
+            <a class="btn btn-primary" asp-controller="Home" asp-action="Index">Go to home</a>
+            <a class="btn btn-ghost" asp-controller="Account" asp-action="Login">Log in</a>
+        </div>
+    </div>
+</section>

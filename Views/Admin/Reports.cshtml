@@ -1,0 +1,33 @@
+@model List<CollegeEvent>
+@{
+    ViewData["Title"] = "Reports";
+    var rows = EventCategories.All.Select(c =>
+    {
+        var evs = Model.Where(e => e.Category == c && !e.IsCancelled).ToList();
+        var past = evs.Where(e => e.IsPast).SelectMany(e => e.Registrations).ToList();
+        return new { Category = c, Events = evs.Count, Regs = evs.Sum(e => e.Registrations.Count), In = evs.Sum(e => e.Registrations.Count(r => r.Attended)), Rate = Analytics.Percent(past.Count(r => r.Attended), past.Count) };
+    }).ToList();
+}
+<div class="page-head-app"><h1>Reports</h1><p class="muted">Summaries computed from live data, plus CSV downloads that open in Excel.</p></div>
+
+<div class="export-grid">
+    <a class="export-card" asp-action="EventsCsv"><svg class="ic"><use href="#i-download"/></svg><strong>Events</strong><small>All events with capacity, registrations and status</small></a>
+    <a class="export-card" asp-action="RegistrationsCsv"><svg class="ic"><use href="#i-download"/></svg><strong>Registrations</strong><small>Every student registration</small></a>
+    <a class="export-card" asp-action="AttendanceCsv"><svg class="ic"><use href="#i-download"/></svg><strong>Attendance</strong><small>Every check-in with time and method</small></a>
+</div>
+
+<section class="panel">
+    <div class="panel-head"><h2 class="h3">By category</h2></div>
+    <div class="table-wrap">
+        <table class="data">
+            <thead><tr><th>Category</th><th>Events</th><th>Registrations</th><th>Check-ins</th><th>Attendance (finished events)</th></tr></thead>
+            <tbody>
+                @foreach (var r in rows)
+                {
+                    <tr class="cat-@EventCategories.Slug(r.Category)"><td><div class="cell-title"><i class="dot"></i><strong>@r.Category</strong></div></td><td>@r.Events</td><td>@r.Regs</td><td>@r.In</td>
+                        <td><div class="mini-bar"><div class="meter"><i style="width:@(r.Rate)%"></i></div><small>@r.Rate%</small></div></td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>

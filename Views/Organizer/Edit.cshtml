@@ -1,0 +1,12 @@
+@model CollegeEvent
+@{ ViewData["Title"] = "Edit event"; }
+<div class="page-head-app"><h1>Edit event</h1><p class="muted">Changing the date or venue notifies everyone who registered.</p></div>
+<form asp-action="Edit" method="post" class="panel form-panel form-wide">
+    <div asp-validation-summary="ModelOnly" class="alert alert-error"></div>
+    <input type="hidden" asp-for="Id" />
+    <partial name="_EventForm" />
+    <div class="form-actions">
+        <button class="btn btn-primary" type="submit">Save changes</button>
+        <a class="btn btn-ghost" asp-action="Participants" asp-route-id="@Model.Id">Cancel</a>
+    </div>
+</form>

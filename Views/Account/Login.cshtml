@@ -1,0 +1,42 @@
+@model LoginViewModel
+@{ ViewData["Title"] = "Log in"; }
+
+<section class="auth">
+    <div class="wrap auth-grid">
+        <div class="auth-side">
+            <h1 class="h1-md">Welcome back to campus.</h1>
+            <p class="lead">Log in to register for events, show your QR pass and see your participation record.</p>
+            <div class="demo" aria-labelledby="demo-title">
+                <h2 id="demo-title" class="h4">Demo accounts</h2>
+                <p class="muted small">Pick a role to fill the form. Password is shown on each button.</p>
+                <div class="demo-list">
+                    <button type="button" class="demo-btn" data-email="rahul@@campusly.edu" data-password="student123"><span class="demo-role"><svg class="ic"><use href="#i-graduation-cap"/></svg>Student</span><small>rahul@@campusly.edu / student123</small></button>
+                    <button type="button" class="demo-btn" data-email="tech@@campusly.edu" data-password="organizer123"><span class="demo-role"><svg class="ic"><use href="#i-megaphone"/></svg>Organizer</span><small>tech@@campusly.edu / organizer123</small></button>
+                    <button type="button" class="demo-btn" data-email="admin@@campusly.edu" data-password="admin123"><span class="demo-role"><svg class="ic"><use href="#i-shield-check"/></svg>Administrator</span><small>admin@@campusly.edu / admin123</small></button>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel auth-card">
+            <h2>Log in</h2>
+            <form asp-action="Login" asp-route-returnUrl="@ViewBag.ReturnUrl" method="post">
+                <div asp-validation-summary="ModelOnly" class="alert alert-error"></div>
+                <div class="field">
+                    <label asp-for="Email">Email</label>
+                    <input asp-for="Email" autocomplete="username" placeholder="you@@college.edu" required />
+                    <span asp-validation-for="Email" class="field-error"></span>
+                </div>
+                <div class="field">
+                    <label asp-for="Password">Password</label>
+                    <div class="input-wrap">
+                        <input asp-for="Password" autocomplete="current-password" required />
+                        <button type="button" class="icon-btn pw-toggle" aria-label="Show password" aria-pressed="false"><svg class="ic"><use href="#i-eye"/></svg></button>
+                    </div>
+                    <span asp-validation-for="Password" class="field-error"></span>
+                </div>
+                <button class="btn btn-primary btn-block" type="submit">Log in</button>
+            </form>
+            <p class="auth-alt muted">New here? <a asp-action="Register">Create a student account</a></p>
+        </div>
+    </div>
+</section>

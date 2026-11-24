@@ -1,0 +1,53 @@
+@model RegisterViewModel
+@{ ViewData["Title"] = "Sign up"; }
+
+<section class="auth">
+    <div class="wrap auth-grid">
+        <div class="auth-side">
+            <h1 class="h1-md">Join your campus network.</h1>
+            <p class="lead">Create a student account to register for events, collect QR passes and build your participation record.</p>
+            <ul class="check-list">
+                <li><svg class="ic"><use href="#i-circle-check"/></svg>Register for events in one tap</li>
+                <li><svg class="ic"><use href="#i-circle-check"/></svg>A personal QR pass for every event</li>
+                <li><svg class="ic"><use href="#i-circle-check"/></svg>Certificates for events you attend</li>
+            </ul>
+            <p class="muted small">Organizer and administrator accounts are created by an administrator.</p>
+        </div>
+
+        <div class="panel auth-card">
+            <h2>Create account</h2>
+            <form asp-action="Register" method="post">
+                <div asp-validation-summary="ModelOnly" class="alert alert-error"></div>
+                <div class="field">
+                    <label asp-for="FullName">Full name</label>
+                    <input asp-for="FullName" autocomplete="name" maxlength="80" required />
+                    <span asp-validation-for="FullName" class="field-error"></span>
+                </div>
+                <div class="field">
+                    <label asp-for="Email">Email</label>
+                    <input asp-for="Email" autocomplete="email" maxlength="120" required />
+                    <span asp-validation-for="Email" class="field-error"></span>
+                </div>
+                <div class="field">
+                    <label asp-for="Department">Department</label>
+                    <select asp-for="Department" asp-items="@(new SelectList(EventCategories.Departments, Model.Department))" required><option value="">Choose your department</option></select>
+                    <span asp-validation-for="Department" class="field-error"></span>
+                </div>
+                <div class="field-row">
+                    <div class="field">
+                        <label asp-for="Password">Password</label>
+                        <input asp-for="Password" autocomplete="new-password" minlength="6" required />
+                        <span asp-validation-for="Password" class="field-error"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="ConfirmPassword">Confirm password</label>
+                        <input asp-for="ConfirmPassword" autocomplete="new-password" required />
+                        <span asp-validation-for="ConfirmPassword" class="field-error"></span>
+                    </div>
+                </div>
+                <button class="btn btn-primary btn-block" type="submit">Create account</button>
+            </form>
+            <p class="auth-alt muted">Already have an account? <a asp-action="Login">Log in</a></p>
+        </div>
+    </div>
+</section>

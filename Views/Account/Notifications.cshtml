@@ -1,0 +1,35 @@
+@model List<Notification>
+@{
+    ViewData["Title"] = "Notifications"; Layout = "_Dashboard";
+    string IconFor(string t) => t switch { "registration" => "ticket", "reminder" => "clock", "attendance" => "user-check", "certificate" => "award", "cancelled" => "ban", "update" => "megaphone", _ => "info" };
+    int unread = Model.Count(n => !n.IsRead);
+}
+
+<div class="page-head-app head-row">
+    <div><h1>Notifications</h1><p class="muted">@unread unread of @Model.Count shown. Alerts appear inside CAMPUSLY only.</p></div>
+    @if (unread > 0)
+    {
+        <form asp-action="MarkAllRead" method="post"><button class="btn btn-ghost"><svg class="ic"><use href="#i-check-check"/></svg>Mark all as read</button></form>
+    }
+</div>
+
+@if (!Model.Any())
+{
+    <div class="empty-card"><h3>You're all caught up</h3><p class="muted">Registrations, reminders, check-ins and event changes will show up here.</p></div>
+}
+else
+{
+    <ul class="notice-list">
+        @foreach (var n in Model)
+        {
+            <li class="@(n.IsRead ? "" : "is-unread")">
+                <span class="n-ic n-@n.Type"><svg class="ic"><use href="#i-@IconFor(n.Type)"/></svg></span>
+                <div class="n-body"><strong>@n.Title</strong><span>@n.Message</span><small>@n.CreatedOn.ToString("ddd, dd MMM yyyy, hh:mm tt")</small></div>
+                <form asp-action="MarkRead" asp-route-id="@n.Id" method="post">
+                    @if (!string.IsNullOrEmpty(n.Link)) { <button class="btn btn-ghost btn-sm">Open</button> }
+                    else if (!n.IsRead) { <button class="btn btn-ghost btn-sm">Mark read</button> }
+                </form>
+            </li>
+        }
+    </ul>
+}

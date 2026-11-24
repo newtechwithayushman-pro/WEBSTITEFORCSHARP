@@ -1,0 +1,77 @@
+@model List<CollegeEvent>
+@{
+    ViewData["Title"] = "Explore events";
+    var registeredIds = (List<int>)ViewBag.RegisteredIds;
+    bool isStudent = User.IsInRole("Student");
+    int upcomingCount = Model.Count(e => !e.IsPast);
+}
+
+<section class="page-head">
+    <div class="wrap">
+        <h1 class="h1-md">Explore events</h1>
+        <p class="lead">@upcomingCount upcoming on campus. Search, filter and save a seat in a tap.</p>
+    </div>
+</section>
+
+<section class="section tight">
+    <div class="wrap" id="explore">
+        <div class="toolbar">
+            <label class="search">
+                <svg class="ic"><use href="#i-search"/></svg>
+                <span class="sr-only">Search events</span>
+                <input type="search" id="ex-search" placeholder="Search by event, organizer, venue or topic" autocomplete="off" />
+            </label>
+            <label class="select"><span class="sr-only">Date</span>
+                <select id="ex-date">
+                    <option value="any">Any date</option>
+                    <option value="today">Today</option>
+                    <option value="week">Next 7 days</option>
+                    <option value="month">Next 30 days</option>
+                </select>
+            </label>
+            <label class="select"><span class="sr-only">Sort</span>
+                <select id="ex-sort">
+                    <option value="date">Soonest first</option>
+                    <option value="pop">Most popular</option>
+                    <option value="seats">Most seats left</option>
+                    <option value="new">Recently added</option>
+                </select>
+            </label>
+            <div class="seg" role="group" aria-label="Layout">
+                <button type="button" class="seg-btn" data-view="grid" aria-pressed="true" aria-label="Grid view"><svg class="ic"><use href="#i-layout-grid"/></svg></button>
+                <button type="button" class="seg-btn" data-view="list" aria-pressed="false" aria-label="List view"><svg class="ic"><use href="#i-list"/></svg></button>
+            </div>
+        </div>
+
+        <div class="chips" role="group" aria-label="Filter by category" id="ex-chips">
+            <button type="button" class="chip-btn" aria-pressed="true" data-cat="all">All</button>
+            @foreach (var c in EventCategories.All)
+            {
+                <button type="button" class="chip-btn cat-@EventCategories.Slug(c)" aria-pressed="false" data-cat="@c"><i class="dot"></i>@c <span class="count">@Model.Count(e => e.Category == c && !e.IsPast)</span></button>
+            }
+            @if (isStudent) { <button type="button" class="chip-btn" aria-pressed="false" data-cat="mine"><svg class="ic"><use href="#i-check"/></svg>My registrations</button> }
+        </div>
+
+        <div class="toolbar toggles">
+            <label class="check"><input type="checkbox" id="ex-open" /> Open for registration only</label>
+            <label class="check"><input type="checkbox" id="ex-past" /> Include past events</label>
+            <p id="ex-count" class="muted result-count" aria-live="polite"></p>
+        </div>
+
+        <div class="card-grid" id="ex-grid">
+            @foreach (var ev in Model)
+            {
+                ViewData["Registered"] = registeredIds.Contains(ev.Id);
+                <partial name="_EventCard" model="ev" view-data="ViewData" />
+            }
+        </div>
+
+        <div class="empty-card" id="ex-empty" hidden>
+            <h3>No events match</h3>
+            <p class="muted">Try a different word, widen the date range or clear the filters.</p>
+            <button type="button" class="btn btn-ghost" id="ex-reset">Clear filters</button>
+        </div>
+    </div>
+</section>
+
+@section Scripts { <script src="~/js/explore.js" asp-append-version="true"></script> }

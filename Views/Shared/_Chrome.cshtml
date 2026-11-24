@@ -1,0 +1,14 @@
+@* Toasts + confirm dialog, shared by both layouts. Messages come from TempData. *@
+<div id="toasts" class="toasts" role="status" aria-live="polite"
+     data-success="@TempData["Success"]" data-error="@TempData["Error"]"></div>
+
+<dialog id="confirm-dialog" class="dialog">
+    <form method="dialog">
+        <h2 id="confirm-title">Are you sure?</h2>
+        <p id="confirm-text" class="muted"></p>
+        <div class="dialog-actions">
+            <button class="btn btn-ghost" value="cancel">Keep it</button>
+            <button class="btn btn-danger" value="ok" id="confirm-ok">Confirm</button>
+        </div>
+    </form>
+</dialog>
